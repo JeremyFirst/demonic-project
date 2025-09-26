@@ -13,11 +13,11 @@
         <a href="/"><img src="/img/logotip-demonic.svg" alt="Logo"></a>
     </div>
     <nav class="navbar">
-        <a href="#" class="active-page">Магазин (ред)</a>
-        <a href="#">Инфо</a>
-        <a href="#">Статистика</a>
-        <a href="#">Тех поддержка</a>
-        <a href="#">Администраторы</a>
+        <a href="#" class="active-page" id="shop-nav">Магазин (ред)</a>
+        <a href="#" id="info-nav">Инфо</a>
+        <a href="#" id="stats-nav">Статистика</a>
+        <a href="#" id="support-nav">Тех поддержка</a>
+        <a href="#" id="admins-nav">Администраторы</a>
     </nav>
 </header>
 
@@ -34,7 +34,7 @@
     <!-- Основной контент -->
     <div id="content-area">
         <!-- Контейнер для редактора товаров -->
-        <div class="editor-container">
+        <div id="products-section" class="editor-container">
             <div class="editor-header">Редактор товаров</div>
             <div class="editor-buttons">
                 <button id="add-product">Добавить новый товар</button> 
@@ -42,6 +42,29 @@
             <div id="product-list" class="editor-items">
                 <!-- Товары будут отображаться здесь -->
             </div>
+        </div>
+
+        <!-- Контейнер для управления категориями -->
+        <div id="categories-section" class="editor-container" style="display: none;">
+            <div class="editor-header">Управление категориями</div>
+            <div class="editor-buttons">
+                <button id="add-category">Добавить новую категорию</button> 
+            </div>
+            <div id="category-list" class="editor-items">
+                <!-- Категории будут отображаться здесь -->
+            </div>
+        </div>
+
+    </div>
+    
+    <!-- Контейнер для управления администраторами (отдельно от content-area) -->
+    <div id="admins-section" class="editor-container" style="display: none;">
+        <div class="editor-header">Управление администраторами</div>
+        <div class="editor-buttons">
+            <button id="add-admin">Добавить администратора</button> 
+        </div>
+        <div id="admin-list" class="editor-items">
+            <!-- Администраторы будут отображаться здесь -->
         </div>
     </div>
 </div>
@@ -76,8 +99,7 @@
 
         <label for="category-select">Выберите категорию:</label>
         <select id="category-select">
-            <option value="1">Категория 1</option>
-            <option value="2">Категория 2</option>
+            <option value="">Загрузка категорий...</option>
         </select>
 
         <button id="preview-btn">Предпросмотр</button> 
@@ -126,12 +148,77 @@
 
             <label for="edit-category-select">Категория:</label>
             <select id="edit-category-select">
-                <option value="1">Категория 1</option>
-                <option value="2">Категория 2</option>
+                <option value="">Загрузка категорий...</option>
             </select>
 
             <button type="submit" id="edit-product-btn">Редактировать товар</button>
             <button type="button" id="delete-product-btn">Удалить товар</button>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления/редактирования категории -->
+<div id="category-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn-category">&times;</span> <!-- Крестик для закрытия -->
+        <h2 id="category-modal-title">Добавить категорию</h2>
+        <form id="category-form">
+            <input id="category-id" type="hidden">
+
+            <div class="form-group">
+                <label for="category-name">Название категории:</label>
+                <input type="text" id="category-name" name="category-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="category-description">Описание:</label>
+                <textarea id="category-description" name="category-description" placeholder="Описание категории..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="category-game-select">Игра:</label>
+                <select id="category-game-select">
+                    <option value="1">Minecraft</option>
+                    <option value="2">RUST</option>
+                    <option value="3">SCP</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="delete-category-btn" style="display: none;">Удалить категорию</button>
+                <button type="submit" id="save-category-btn">Создать категорию</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для добавления администратора -->
+<div id="admin-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn-admin">&times;</span> <!-- Крестик для закрытия -->
+        <h2 id="admin-modal-title">Добавить администратора</h2>
+        <form id="admin-form">
+            <input id="admin-id" type="hidden">
+
+            <div class="form-group">
+                <label for="admin-user-select">Выберите пользователя:</label>
+                <select id="admin-user-select">
+                    <option value="">Загрузка пользователей...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="admin-role-select">Роль:</label>
+                <select id="admin-role-select">
+                    <option value="admin">Администратор</option>
+                    <option value="superadmin">Супер-администратор</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="delete-admin-btn" style="display: none;">Удалить администратора</button>
+                <button type="submit" id="save-admin-btn">Добавить администратора</button>
+            </div>
         </form>
     </div>
 </div>

@@ -12,6 +12,9 @@ document.addEventListener("DOMContentLoaded", function () {
                 console.log("Пользователь авторизован:", user);
                 // Показываем приветствие
                 document.title = `Админ панель - ${user.username}`;
+                
+                // Проверяем, является ли пароль временным
+                checkTempPassword(user.username);
             } else {
                 window.location.href = "/admin_login.html";
             }
@@ -78,7 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
         productPriceInput.value = "";
         document.getElementById("product-description").value = "";
         productImageInput.value = "";
-        previewSection.style.display = "none";
+        previewSection.classList.remove("show");
         productPreview.innerHTML = "";
     });
 
@@ -99,7 +102,20 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     });
 
+    // Переменная для отслеживания состояния предпросмотра
+    let isPreviewMode = false;
+
     previewBtn.addEventListener("click", function () {
+        if (!isPreviewMode) {
+            // Показываем предпросмотр
+            showPreview();
+        } else {
+            // Скрываем предпросмотр
+            hidePreview();
+        }
+    });
+
+    function showPreview() {
         const name = productNameInput.value;
         const price = productPriceInput.value;
         const description = document.getElementById("product-description").value;
@@ -110,22 +126,43 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
     
-        // Сразу изменяем ширину модального окна
-        productModal.style.width = "670px"; // Устанавливаем ширину на 670px
+        // Изменяем ширину модального окна
+        productModal.style.width = "670px";
     
-        // Теперь показываем предпросмотр товара
-        previewSection.style.display = "block"; // Показываем раздел предпросмотра
+        // Показываем предпросмотр с анимацией
+        setTimeout(() => {
+            previewSection.classList.add("show");
+        }, 50);
+        
         const reader = new FileReader();
         reader.onload = function (e) {
             productPreview.innerHTML = `
-                <img src="${e.target.result}" alt="${name}" style="width:150px; height:150px; object-fit:cover; border-radius:10px;">
+                <img src="${e.target.result}" alt="${name}">
                 <p><strong>${name}</strong></p>
-                <p>${description}</p>
-                <p>${price} ₽</p>
+                <p class="description">${description}</p>
+                <p><strong>Цена: ${price} ₽</strong></p>
             `;
         };
         reader.readAsDataURL(imageFile);
-    });
+        
+        // Меняем текст кнопки
+        previewBtn.textContent = "Закончить предпросмотр";
+        isPreviewMode = true;
+    }
+
+    function hidePreview() {
+        // Скрываем предпросмотр с анимацией
+        previewSection.classList.remove("show");
+        
+        // Возвращаем ширину модального окна
+        setTimeout(() => {
+            productModal.style.width = "400px";
+        }, 300); // Ждем завершения анимации
+        
+        // Меняем текст кнопки обратно
+        previewBtn.textContent = "Предпросмотр";
+        isPreviewMode = false;
+    }
     
 
     productImageInput.addEventListener("change", function () {
@@ -139,9 +176,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById("product-description").value = "";
         productImageInput.value = "";
         fileNameDisplay.textContent = "Файл не выбран";
-        previewSection.style.display = "none";
+        
+        // Сбрасываем состояние предпросмотра
+        hidePreview();
         productPreview.innerHTML = "";
-        productModal.style.width = "400px";
     });
 
     saveProductBtn.addEventListener("click", function () {
@@ -191,8 +229,13 @@ document.addEventListener("DOMContentLoaded", function () {
         editProductImage.style.display = "block";  // Показываем изображение
     
         // Заполняем поля с игрой и категорией
-        document.getElementById("edit-game-select").value = product.game_id;  // Игра
-        document.getElementById("edit-category-select").value = product.category_id;  // Категория
+        const editGameSelect = document.getElementById("edit-game-select");
+        const editCategorySelect = document.getElementById("edit-category-select");
+        
+        editGameSelect.value = product.game_id;  // Игра
+        
+        // Загружаем категории для выбранной игры
+        loadCategoriesForEditGame(product.game_id, product.category_id);
     
         // Открываем модальное окно редактирования
         document.getElementById("edit-product-modal").classList.add("show");  // Показываем модальное окно редактирования
@@ -291,6 +334,9 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     
     fetchProducts();
+    
+    // Загружаем категории для первой игры
+    loadCategoriesForGame(gameSelect.value);
 
     function fetchProducts() {
         fetch('/get-products')
@@ -299,5 +345,757 @@ document.addEventListener("DOMContentLoaded", function () {
                 displayProducts(products);
             })
             .catch(error => console.error('Ошибка при получении товаров:', error));
+    }
+
+    // Функция для загрузки категорий по игре
+    function loadCategoriesForGame(gameId) {
+        if (!gameId) {
+            gameId = '2'; // RUST по умолчанию
+        }
+        
+        fetch(`/get-categories-by-game/${gameId}`)
+            .then(response => response.json())
+            .then(categories => {
+                updateCategorySelect(categories);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении категорий:', error);
+                updateCategorySelect([]);
+            });
+    }
+
+    // Функция для обновления селекта категорий
+    function updateCategorySelect(categories) {
+        categorySelect.innerHTML = '';
+        
+        if (categories.length === 0) {
+            categorySelect.innerHTML = '<option value="">Нет категорий для этой игры</option>';
+            return;
+        }
+
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            categorySelect.appendChild(option);
+        });
+    }
+
+    // Обработчик изменения игры
+    gameSelect.addEventListener('change', function() {
+        loadCategoriesForGame(this.value);
+    });
+
+    // Функция для загрузки категорий в модальном окне редактирования
+    function loadCategoriesForEditGame(gameId, selectedCategoryId) {
+        fetch(`/get-categories-by-game/${gameId}`)
+            .then(response => response.json())
+            .then(categories => {
+                updateEditCategorySelect(categories, selectedCategoryId);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении категорий для редактирования:', error);
+                updateEditCategorySelect([], null);
+            });
+    }
+
+    // Функция для обновления селекта категорий в модальном окне редактирования
+    function updateEditCategorySelect(categories, selectedCategoryId) {
+        const editCategorySelect = document.getElementById("edit-category-select");
+        editCategorySelect.innerHTML = '';
+        
+        if (categories.length === 0) {
+            editCategorySelect.innerHTML = '<option value="">Нет категорий для этой игры</option>';
+            return;
+        }
+
+        categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            if (category.id == selectedCategoryId) {
+                option.selected = true;
+            }
+            editCategorySelect.appendChild(option);
+        });
+    }
+
+    // Обработчик изменения игры в модальном окне редактирования
+    document.getElementById("edit-game-select").addEventListener('change', function() {
+        loadCategoriesForEditGame(this.value, null);
+    });
+
+    // ========== ФУНКЦИОНАЛ КАТЕГОРИЙ ==========
+
+    // Элементы для работы с категориями
+    const addCategoryBtn = document.getElementById("add-category-btn");
+    const addCategoryModalBtn = document.getElementById("add-category");
+    const categoryModal = document.getElementById("category-modal");
+    const closeCategoryModalBtn = document.querySelector(".close-btn-category");
+    const categoryForm = document.getElementById("category-form");
+    const saveCategoryBtn = document.getElementById("save-category-btn");
+    const deleteCategoryBtn = document.getElementById("delete-category-btn");
+    const categoryList = document.getElementById("category-list");
+    const productsSection = document.getElementById("products-section");
+    const categoriesSection = document.getElementById("categories-section");
+    const adminsSection = document.getElementById("admins-section");
+
+    // Переключение между разделами
+    addCategoryBtn.addEventListener("click", function() {
+        showCategoriesSection();
+    });
+
+    // Возврат к товарам (можно добавить кнопку "Назад" или использовать существующую)
+    document.getElementById("add-product-btn").addEventListener("click", function() {
+        showProductsSection();
+    });
+
+    // Функции для переключения разделов
+    function showCategoriesSection() {
+        productsSection.style.display = "none";
+        categoriesSection.style.display = "block";
+        fetchCategories();
+        // Показываем боковое меню для раздела категорий
+        document.querySelector('.sidebar').style.display = "block";
+        // Показываем родительский контейнер
+        document.getElementById('content-area').style.display = "block";
+        // Скрываем раздел администраторов
+        adminsSection.style.display = "none";
+        // Сохраняем состояние в localStorage
+        localStorage.setItem('adminPanelSection', 'categories');
+    }
+
+    function showProductsSection() {
+        categoriesSection.style.display = "none";
+        productsSection.style.display = "block";
+        // Показываем боковое меню для раздела товаров
+        document.querySelector('.sidebar').style.display = "block";
+        // Показываем родительский контейнер
+        document.getElementById('content-area').style.display = "block";
+        // Скрываем раздел администраторов
+        adminsSection.style.display = "none";
+        // Сохраняем состояние в localStorage
+        localStorage.setItem('adminPanelSection', 'products');
+    }
+
+    // Восстановление состояния при загрузке страницы
+    function restoreSectionState() {
+        const savedSection = localStorage.getItem('adminPanelSection');
+        if (savedSection === 'categories') {
+            showCategoriesSection();
+        } else {
+            showProductsSection();
+        }
+    }
+
+    // Вызываем восстановление состояния при загрузке
+    restoreSectionState();
+
+    // ========== ФУНКЦИОНАЛ НАВИГАЦИИ ==========
+
+    // Элементы навигации
+    const shopNav = document.getElementById("shop-nav");
+    const adminsNav = document.getElementById("admins-nav");
+    
+    // Проверяем, что все элементы найдены
+    if (!adminsNav) {
+        console.error("Элемент #admins-nav не найден");
+    }
+    if (!adminsSection) {
+        console.error("Элемент #admins-section не найден");
+    }
+
+    // Обработчик для кнопки "Администраторы"
+    if (adminsNav) {
+        adminsNav.addEventListener("click", function(event) {
+            event.preventDefault();
+            console.log("Клик по кнопке Администраторы");
+            
+            // Убираем активный класс со всех кнопок навигации
+            document.querySelectorAll('.navbar a').forEach(link => {
+                link.classList.remove('active-page');
+            });
+            
+            // Добавляем активный класс к кнопке "Администраторы"
+            adminsNav.classList.add('active-page');
+            
+            // Скрываем боковое меню
+            document.querySelector('.sidebar').style.display = "none";
+            
+            // Скрываем родительский контейнер полностью
+            document.getElementById('content-area').style.display = "none";
+            
+            // Показываем раздел администраторов
+            if (adminsSection) {
+                adminsSection.style.display = "block";
+                console.log("Показываем секцию администраторов");
+            } else {
+                console.error("Секция администраторов не найдена");
+            }
+            
+            // Загружаем список администраторов
+            fetchAdmins();
+        });
+    } else {
+        console.error("Кнопка Администраторы не найдена");
+    }
+
+    // Обработчик для кнопки "Магазин (ред)"
+    shopNav.addEventListener("click", function(event) {
+        event.preventDefault();
+        
+        // Убираем активный класс со всех кнопок навигации
+        document.querySelectorAll('.navbar a').forEach(link => {
+            link.classList.remove('active-page');
+        });
+        
+        // Добавляем активный класс к кнопке "Магазин"
+        shopNav.classList.add('active-page');
+        
+        // Показываем боковое меню
+        document.querySelector('.sidebar').style.display = "block";
+        
+        // Показываем родительский контейнер
+        document.getElementById('content-area').style.display = "block";
+        
+        // Скрываем раздел администраторов
+        adminsSection.style.display = "none";
+        
+        // Показываем раздел товаров
+        productsSection.style.display = "block";
+    });
+
+    // Открытие модального окна для добавления категории
+    addCategoryModalBtn.addEventListener("click", function() {
+        categoryModal.classList.add("show");
+        document.getElementById("category-modal-title").textContent = "Добавить категорию";
+        document.getElementById("category-id").value = "";
+        document.getElementById("category-name").value = "";
+        document.getElementById("category-description").value = "";
+        document.getElementById("category-game-select").value = "1";
+        deleteCategoryBtn.style.display = "none";
+        saveCategoryBtn.textContent = "Создать категорию";
+    });
+
+    // Закрытие модального окна категории
+    closeCategoryModalBtn.addEventListener("click", function() {
+        categoryModal.classList.remove("show");
+    });
+
+    // Закрытие по Escape
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Escape") {
+            categoryModal.classList.remove("show");
+        }
+    });
+
+    // Предотвращение стандартной отправки формы
+    categoryForm.addEventListener("submit", function(event) {
+        event.preventDefault(); // Предотвращаем перезагрузку страницы
+        saveCategory();
+    });
+
+    // Сохранение категории
+    function saveCategory() {
+        const categoryId = document.getElementById("category-id").value;
+        const categoryName = document.getElementById("category-name").value;
+        const categoryDescription = document.getElementById("category-description").value;
+        const gameId = document.getElementById("category-game-select").value;
+
+        if (!categoryName.trim()) {
+            alert("Введите название категории");
+            return;
+        }
+
+        const categoryData = {
+            name: categoryName,
+            description: categoryDescription,
+            game_id: gameId
+        };
+
+        if (categoryId) {
+            // Редактирование существующей категории
+            fetch(`/edit-category/${categoryId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(categoryData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchCategories();
+                    categoryModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при обновлении категории');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении категории:', error);
+                alert('Ошибка при обновлении категории');
+            });
+        } else {
+            // Добавление новой категории
+            fetch('/add-category', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(categoryData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchCategories();
+                    categoryModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при добавлении категории');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении категории:', error);
+                alert('Ошибка при добавлении категории');
+            });
+        }
+    }
+
+    // Обработчик для кнопки сохранения (для совместимости)
+    saveCategoryBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+        saveCategory();
+    });
+
+    // Удаление категории
+    deleteCategoryBtn.addEventListener("click", function() {
+        const categoryId = document.getElementById("category-id").value;
+        
+        if (!categoryId) return;
+
+        if (confirm("Вы уверены, что хотите удалить эту категорию?")) {
+            fetch(`/delete-category/${categoryId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchCategories();
+                    categoryModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при удалении категории');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении категории:', error);
+                alert('Ошибка при удалении категории');
+            });
+        }
+    });
+
+    // Функция для отображения категорий
+    function displayCategories(categories) {
+        categoryList.innerHTML = '';
+        
+        if (categories.length === 0) {
+            categoryList.innerHTML = '<p>Категории не найдены. Добавьте первую категорию!</p>';
+            return;
+        }
+
+        categories.forEach(category => {
+            const categoryItem = document.createElement('div');
+            categoryItem.classList.add('category-item');
+            categoryItem.innerHTML = `
+                <div class="category-info">
+                    <h4>${category.name}</h4>
+                    <p><strong>Игра:</strong> ${category.game_name || 'Не указана'}</p>
+                    <p><strong>Описание:</strong> ${category.description || 'Нет описания'}</p>
+                </div>
+                <div class="category-actions">
+                    <button class="edit-category-btn" data-id="${category.id}">Редактировать</button>
+                </div>
+            `;
+            
+            // Обработчик для редактирования
+            const editBtn = categoryItem.querySelector('.edit-category-btn');
+            editBtn.addEventListener('click', () => {
+                openEditCategoryModal(category);
+            });
+            
+            categoryList.appendChild(categoryItem);
+        });
+    }
+
+    // Функция для открытия модального окна редактирования категории
+    function openEditCategoryModal(category) {
+        document.getElementById("category-modal-title").textContent = "Редактировать категорию";
+        document.getElementById("category-id").value = category.id;
+        document.getElementById("category-name").value = category.name;
+        document.getElementById("category-description").value = category.description || '';
+        document.getElementById("category-game-select").value = category.game_id;
+        deleteCategoryBtn.style.display = "block";
+        saveCategoryBtn.textContent = "Сохранить изменения";
+        
+        categoryModal.classList.add("show");
+    }
+
+    // Функция для получения категорий с сервера
+    function fetchCategories() {
+        fetch('/get-categories')
+            .then(response => response.json())
+            .then(categories => {
+                displayCategories(categories);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении категорий:', error);
+                categoryList.innerHTML = '<p>Ошибка при загрузке категорий</p>';
+            });
+    }
+
+    // ========== ФУНКЦИОНАЛ АДМИНИСТРАТОРОВ ==========
+
+    // Элементы для работы с администраторами
+    const addAdminBtn = document.getElementById("add-admin");
+    const adminModal = document.getElementById("admin-modal");
+    const closeAdminModalBtn = document.querySelector(".close-btn-admin");
+    const adminForm = document.getElementById("admin-form");
+    const saveAdminBtn = document.getElementById("save-admin-btn");
+    const deleteAdminBtn = document.getElementById("delete-admin-btn");
+    const adminList = document.getElementById("admin-list");
+
+    // Открытие модального окна для добавления администратора
+    addAdminBtn.addEventListener("click", function() {
+        adminModal.classList.add("show");
+        document.getElementById("admin-modal-title").textContent = "Добавить администратора";
+        document.getElementById("admin-id").value = "";
+        document.getElementById("admin-user-select").value = "";
+        document.getElementById("admin-role-select").value = "admin";
+        deleteAdminBtn.style.display = "none";
+        saveAdminBtn.textContent = "Добавить администратора";
+        
+        // Загружаем список пользователей
+        fetchUsers();
+    });
+
+    // Закрытие модального окна администратора
+    closeAdminModalBtn.addEventListener("click", function() {
+        adminModal.classList.remove("show");
+    });
+
+    // Предотвращение стандартной отправки формы
+    adminForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        saveAdmin();
+    });
+
+    // Сохранение администратора
+    function saveAdmin() {
+        const adminId = document.getElementById("admin-id").value;
+        const userId = document.getElementById("admin-user-select").value;
+        const role = document.getElementById("admin-role-select").value;
+
+        if (!userId) {
+            alert("Выберите пользователя");
+            return;
+        }
+
+        const adminData = {
+            user_id: userId,
+            role: role
+        };
+
+        if (adminId) {
+            // Редактирование существующего администратора
+            fetch(`/edit-admin/${adminId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(adminData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchAdmins();
+                    adminModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при обновлении администратора');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении администратора:', error);
+                alert('Ошибка при обновлении администратора');
+            });
+        } else {
+            // Добавление нового администратора
+            fetch('/add-admin', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(adminData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    // Показываем временный пароль
+                    const tempPassword = data.tempPassword;
+                    alert(`${data.message}\n\nВременный пароль: ${tempPassword}\n\nСохраните этот пароль! Администратор должен использовать его для первого входа.`);
+                    fetchAdmins();
+                    adminModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при добавлении администратора');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении администратора:', error);
+                alert('Ошибка при добавлении администратора');
+            });
+        }
+    }
+
+    // Удаление администратора
+    deleteAdminBtn.addEventListener("click", function() {
+        const adminId = document.getElementById("admin-id").value;
+        
+        if (!adminId) return;
+
+        if (confirm("Вы уверены, что хотите удалить этого администратора?")) {
+            fetch(`/delete-admin/${adminId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchAdmins();
+                    adminModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при удалении администратора');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении администратора:', error);
+                alert('Ошибка при удалении администратора');
+            });
+        }
+    });
+
+    // Функция для отображения администраторов
+    function displayAdmins(admins) {
+        adminList.innerHTML = '';
+        
+        if (admins.length === 0) {
+            adminList.innerHTML = '<p>Администраторы не найдены. Добавьте первого администратора!</p>';
+            return;
+        }
+
+        admins.forEach(admin => {
+            const adminItem = document.createElement('div');
+            adminItem.classList.add('admin-item');
+            adminItem.innerHTML = `
+                <div class="admin-info">
+                    <h4>${admin.username}</h4>
+                    <p><strong>Роль:</strong> ${admin.role === 'superadmin' ? 'Супер-администратор' : 'Администратор'}</p>
+                    <p><strong>Дата создания:</strong> ${new Date(admin.created_at).toLocaleDateString()}</p>
+                </div>
+                <div class="admin-actions">
+                    <button class="edit-admin-btn" data-id="${admin.id}">Редактировать</button>
+                </div>
+            `;
+            
+            // Обработчик для редактирования
+            const editBtn = adminItem.querySelector('.edit-admin-btn');
+            editBtn.addEventListener('click', () => {
+                openEditAdminModal(admin);
+            });
+            
+            adminList.appendChild(adminItem);
+        });
+    }
+
+    // Функция для открытия модального окна редактирования администратора
+    function openEditAdminModal(admin) {
+        document.getElementById("admin-modal-title").textContent = "Редактировать администратора";
+        document.getElementById("admin-id").value = admin.id;
+        document.getElementById("admin-role-select").value = admin.role;
+        deleteAdminBtn.style.display = "block";
+        saveAdminBtn.textContent = "Сохранить изменения";
+        
+        // Загружаем пользователей и устанавливаем текущего
+        fetchUsers().then(() => {
+            document.getElementById("admin-user-select").value = admin.user_id;
+        });
+        
+        adminModal.classList.add("show");
+    }
+
+    // Функция для получения администраторов с сервера
+    function fetchAdmins() {
+        fetch('/get-admins')
+            .then(response => response.json())
+            .then(admins => {
+                displayAdmins(admins);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении администраторов:', error);
+                adminList.innerHTML = '<p>Ошибка при загрузке администраторов</p>';
+            });
+    }
+
+    // Функция для получения пользователей с сервера
+    function fetchUsers() {
+        return fetch('/get-users')
+            .then(response => response.json())
+            .then(users => {
+                const userSelect = document.getElementById("admin-user-select");
+                userSelect.innerHTML = '<option value="">Выберите пользователя</option>';
+                
+                users.forEach(user => {
+                    const option = document.createElement('option');
+                    option.value = user.id;
+                    option.textContent = user.username;
+                    userSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении пользователей:', error);
+            });
+    }
+
+    // ========== ФУНКЦИОНАЛ СМЕНЫ ПАРОЛЯ ==========
+    
+    // Функция для проверки временного пароля
+    function checkTempPassword(username) {
+        fetch(`/check-temp-password/${username}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("isTempPassword значение:", data.isTempPassword, "тип:", typeof data.isTempPassword);
+                if (data.isTempPassword === true || data.isTempPassword === 1) {
+                    console.log("Показываем модальное окно смены пароля");
+                    showChangePasswordModal(username);
+                } else {
+                    console.log("Пароль не временный, модальное окно не показываем");
+                }
+            })
+            .catch(error => {
+                console.error("Ошибка при проверке временного пароля:", error);
+            });
+    }
+    
+    // Функция для показа модального окна смены пароля
+    function showChangePasswordModal(username) {
+        console.log("Функция showChangePasswordModal вызвана для пользователя:", username);
+        // Создаем модальное окно
+        const modal = document.createElement('div');
+        modal.id = 'change-password-modal';
+        modal.className = 'show';
+        modal.innerHTML = `
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Смена пароля</h3>
+                    <span class="close-btn">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p>Вы вошли с временным паролем. Пожалуйста, смените его на постоянный.</p>
+                    <form id="change-password-form">
+                        <div class="form-group">
+                            <label for="current-password">Текущий пароль:</label>
+                            <input type="password" id="current-password" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new-password">Новый пароль:</label>
+                            <input type="password" id="new-password" required minlength="6">
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm-password">Подтвердите пароль:</label>
+                            <input type="password" id="confirm-password" required minlength="6">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">Сменить пароль</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        console.log("Модальное окно добавлено в DOM");
+        
+        // Проверяем стили модального окна
+        const modalElement = document.getElementById('change-password-modal');
+        const computedStyle = window.getComputedStyle(modalElement);
+        console.log("Модальное окно стили:", {
+            display: computedStyle.display,
+            position: computedStyle.position,
+            zIndex: computedStyle.zIndex,
+            width: computedStyle.width,
+            height: computedStyle.height
+        });
+        
+        // Обработчики событий
+        const closeBtn = modal.querySelector('.close-btn');
+        const form = modal.querySelector('#change-password-form');
+        
+        closeBtn.addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = document.getElementById('current-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (newPassword !== confirmPassword) {
+                alert('Пароли не совпадают!');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                alert('Пароль должен содержать минимум 6 символов!');
+                return;
+            }
+            
+            try {
+                // Получаем ID администратора
+                const adminResponse = await fetch(`/get-admin-id/${username}`);
+                const adminData = await adminResponse.json();
+                
+                if (!adminData.adminId) {
+                    alert('Ошибка при получении данных администратора');
+                    return;
+                }
+                
+                // Меняем пароль
+                const response = await fetch('/change-admin-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        adminId: adminData.adminId,
+                        currentPassword: currentPassword,
+                        newPassword: newPassword
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    alert('Пароль успешно изменен!');
+                    modal.remove();
+                } else {
+                    alert(result.error || 'Ошибка при смене пароля');
+                }
+            } catch (error) {
+                console.error('Ошибка при смене пароля:', error);
+                alert('Ошибка при смене пароля');
+            }
+        });
     }
 });

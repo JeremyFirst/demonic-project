@@ -225,6 +225,236 @@ header {
     display: flex;
 }
 
+/* Стили для категорий */
+.category-item {
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+#category-list {
+    margin-top: 20px;
+}
+
+.category-item:hover {
+    background-color: #555;
+}
+
+.category-info h4 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    font-size: 18px;
+}
+
+.category-info p {
+    margin: 4px 0;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.category-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-category-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.edit-category-btn:hover {
+    background-color: #0056b3;
+}
+
+/* Стили для формы категорий */
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    color: white;
+    font-weight: bold;
+}
+
+#category-form .form-group input,
+#category-form .form-group textarea {
+    width: 100% !important;
+    padding: 10px;
+    background-color: #555;
+    border: 1px solid #666;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#category-form .form-group select {
+    width: 100% !important;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+#category-form .form-group select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#category-form .form-group textarea {
+    height: 60px;
+    resize: vertical;
+    width: 100% !important;
+    box-sizing: border-box;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.form-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+#save-category-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+#save-category-btn:hover {
+    background-color: #218838;
+}
+
+#delete-category-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+#delete-category-btn:hover {
+    background-color: #c82333;
+}
+
+/* Стили для администраторов */
+.admin-item {
+    background-color: #444;
+    border: 1px solid #555;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.3s ease;
+}
+
+.admin-item:hover {
+    background-color: #555;
+}
+
+.admin-info h4 {
+    margin: 0 0 8px 0;
+    color: #fff;
+    font-size: 18px;
+}
+
+.admin-info p {
+    margin: 4px 0;
+    color: #ccc;
+    font-size: 14px;
+}
+
+.admin-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.edit-admin-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.edit-admin-btn:hover {
+    background-color: #0056b3;
+}
+
+#admin-list {
+    margin-top: 20px;
+}
+
+/* Стили для модального окна администраторов */
+#admin-form .form-group input,
+#admin-form .form-group textarea,
+#admin-form .form-group select {
+    width: 100% !important;
+    padding: 10px;
+    background-color: #555;
+    border: 1px solid #666;
+    border-radius: 4px;
+    color: white;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#admin-form .form-group select {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+}
+
+#admin-form .form-group select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+#save-admin-btn {
+    background-color: #28a745;
+    color: white;
+}
+
+#save-admin-btn:hover {
+    background-color: #218838;
+}
+
+#delete-admin-btn {
+    background-color: #dc3545;
+    color: white;
+}
+
+#delete-admin-btn:hover {
+    background-color: #c82333;
+}
+
 .modal-content {
     background-color: #834040;
     color: white;
@@ -236,9 +466,10 @@ header {
     gap: 10px;
 }
 
-#modal-title {
+#modal-title,
+#category-modal-title {
     text-align: center; /* Центрируем текст по горизонтали */
-    margin: 10;
+    margin: 10px 0;
     font-size: 24px; /* Примерный размер текста */
 }
 
@@ -294,7 +525,7 @@ select:focus {
 
 /* Стили предпросмотра товара */
 .preview-section {
-    display: none;
+    display: block;
     background-color: #444;
     padding: 20px;
     border-radius: 10px;
@@ -304,6 +535,14 @@ select:focus {
     left: 63%; /* Размещение справа */
     transform: translateY(-50%);
     width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+}
+
+.preview-section.show {
+    opacity: 1;
+    visibility: visible;
 }
 
 #preview-section h4 {
@@ -320,15 +559,24 @@ select:focus {
 }
 
 #product-preview img {
-    width: 150px;
-    height: 150px;
+    width: 200px;
+    height: 200px;
     margin-bottom: 15px;
+    border-radius: 8px;
 }
 
 #product-preview p {
     margin: 5px 0;
-    font-size: 16px;
+    font-size: 14px;
     color: #fff;
+    line-height: 1.4;
+}
+
+#product-preview .description {
+    font-size: 13px;
+    color: #ccc;
+    max-width: 300px;
+    text-align: center;
 }
 
 #preview-btn {
@@ -404,7 +652,9 @@ select:focus {
 
 /* Крестик для закрытия модального окна */
 .close-btn-add,
-.close-btn-edit {
+.close-btn-edit,
+.close-btn-category,
+.close-btn-admin {
     cursor: pointer;
     font-size: 40px;  /* Увеличиваем размер крестика */
     color: #fff;
@@ -417,7 +667,10 @@ select:focus {
     z-index: 1000;
 }
 
-.close-btn:hover {
+.close-btn-add:hover,
+.close-btn-edit:hover,
+.close-btn-category:hover,
+.close-btn-admin:hover {
     color: #ff0000;  /* Меняем цвет при наведении */
 }
 
@@ -429,3 +682,133 @@ footer {
     padding: 10px;
     margin-top: auto;
 }
+
+/* Стили для секции администраторов - отдельный контейнер */
+#admins-section {
+    display: none;
+    padding: 20px;
+    padding-bottom: 50px;
+    background: #333;
+    border-radius: 8px;
+    margin: 20px;
+    width: calc(100% - 40px);
+    min-height: auto;
+}
+
+/* Стили для модального окна смены пароля */
+#change-password-modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+#change-password-modal.show {
+    display: flex;
+}
+
+#change-password-modal .modal-content {
+    background: #2a2a2a;
+    padding: 0;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+#change-password-modal .modal-header {
+    background: #333;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#change-password-modal .modal-header h3 {
+    color: #fff;
+    margin: 0;
+    font-size: 18px;
+}
+
+#change-password-modal .close-btn {
+    font-size: 24px;
+    font-weight: bold;
+    color: #fff;
+    cursor: pointer;
+    background: none;
+    border: none;
+}
+
+#change-password-modal .close-btn:hover {
+    color: #dc3545;
+}
+
+#change-password-modal .modal-body {
+    padding: 20px;
+}
+
+#change-password-modal .modal-body p {
+    color: #fff;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#change-password-modal .form-group {
+    margin-bottom: 15px;
+}
+
+#change-password-modal label {
+    display: block;
+    color: #fff;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+#change-password-modal input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #555;
+    border-radius: 4px;
+    background: #1a1a1a;
+    color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+#change-password-modal input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+#change-password-modal .form-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#change-password-modal .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#change-password-modal .btn-primary {
+    background: #007bff;
+    color: white;
+}
+
+#change-password-modal .btn-primary:hover {
+    background: #0056b3;
+}
+

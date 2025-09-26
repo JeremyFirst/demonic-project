@@ -231,7 +231,7 @@ app.post('/admin/login', (req, res) => {
 
     console.log(`Пытаемся найти пользователя с логином: ${login}`); // Логируем логин
 
-    db.query('SELECT * FROM admins WHERE username = ?', [login], (err, results) => {
+    db.query('SELECT *, is_temp_password FROM admins WHERE username = ?', [login], (err, results) => {
         if (err) {
             console.error('Ошибка при выполнении запроса в БД:', err); // Логируем ошибку БД
             return res.status(500).json({ error: 'Ошибка при проверке данных' });
@@ -259,9 +259,14 @@ app.post('/admin/login', (req, res) => {
             console.log('Пароль совпадает!');
             req.session.user = { id: user.id, username: user.username, role: user.role }; // Добавляем роль в сессию
 
-            console.log('Ответ с сервером: ', { username: user.username, role: user.role }); // Логирование ответа
+            console.log('Ответ с сервером: ', { username: user.username, role: user.role, isTempPassword: user.is_temp_password }); // Логирование ответа
     
-            return res.status(200).json({ message: 'Успешная авторизация', username: user.username, role: user.role });
+            return res.status(200).json({ 
+                message: 'Успешная авторизация', 
+                username: user.username, 
+                role: user.role,
+                isTempPassword: user.is_temp_password || false
+            });
         });
     });
     
@@ -486,7 +491,372 @@ app.delete('/delete-product/:id', (req, res) => {
     });
 });
 
+// Маршруты для управления категориями
 
+// Получение всех категорий
+app.get('/get-categories', (req, res) => {
+    db.query(`
+        SELECT c.*, g.name as game_name 
+        FROM categories c 
+        LEFT JOIN games g ON c.game_id = g.id 
+        ORDER BY c.game_id, c.name
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе категорий:', err);
+            return res.status(500).json({ error: 'Ошибка при получении категорий' });
+        }
+        res.json(results);
+    });
+});
+
+// Получение категорий по игре
+app.get('/get-categories-by-game/:gameId', (req, res) => {
+    const gameId = req.params.gameId;
+    
+    db.query(`
+        SELECT c.*, g.name as game_name 
+        FROM categories c 
+        LEFT JOIN games g ON c.game_id = g.id 
+        WHERE c.game_id = ?
+        ORDER BY c.name
+    `, [gameId], (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе категорий по игре:', err);
+            return res.status(500).json({ error: 'Ошибка при получении категорий' });
+        }
+        
+        res.json(results);
+    });
+});
+
+// Добавление новой категории
+app.post('/add-category', (req, res) => {
+    const { name, description, game_id } = req.body;
+
+    if (!name || !game_id) {
+        return res.status(400).json({ error: 'Название категории и игра обязательны' });
+    }
+
+    const query = `INSERT INTO categories (name, description, game_id) VALUES (?, ?, ?)`;
+
+    db.query(query, [name, description, game_id], (err, result) => {
+        if (err) {
+            console.error('Ошибка при добавлении категории:', err);
+            return res.status(500).json({ error: 'Ошибка при добавлении категории' });
+        }
+        res.json({ message: 'Категория добавлена!', id: result.insertId });
+    });
+});
+
+// Редактирование категории
+app.put('/edit-category/:id', (req, res) => {
+    const categoryId = req.params.id;
+    const { name, description, game_id } = req.body;
+
+    console.log('Получен PUT-запрос для обновления категории с ID:', categoryId);
+
+    db.query(
+        'UPDATE categories SET name = ?, description = ?, game_id = ? WHERE id = ?',
+        [name, description, game_id, categoryId],
+        (err, result) => {
+            if (err) {
+                console.error('Ошибка при обновлении категории:', err);
+                return res.status(500).json({ error: 'Ошибка при обновлении категории' });
+            }
+            console.log('Категория обновлена с ID:', categoryId);
+            res.json({ message: 'Категория обновлена!' });
+        }
+    );
+});
+
+// Удаление категории
+app.delete('/delete-category/:id', (req, res) => {
+    const categoryId = req.params.id;
+
+    console.log('Получен DELETE-запрос для удаления категории с ID:', categoryId);
+
+    // Сначала проверяем, есть ли товары в этой категории
+    db.query('SELECT COUNT(*) as count FROM items WHERE category_id = ?', [categoryId], (err, results) => {
+        if (err) {
+            console.error('Ошибка при проверке товаров в категории:', err);
+            return res.status(500).json({ error: 'Ошибка при проверке категории' });
+        }
+
+        if (results[0].count > 0) {
+            return res.status(400).json({ 
+                error: 'Нельзя удалить категорию, в которой есть товары. Сначала переместите или удалите товары.' 
+            });
+        }
+
+        // Удаляем категорию
+        db.query('DELETE FROM categories WHERE id = ?', [categoryId], (err, result) => {
+            if (err) {
+                console.error('Ошибка при удалении категории:', err);
+                return res.status(500).json({ error: 'Ошибка при удалении категории' });
+            }
+            console.log('Категория с ID удалена:', categoryId);
+            res.json({ message: 'Категория удалена' });
+        });
+    });
+});
+
+
+
+// Маршруты для управления администраторами
+
+// Получение всех администраторов
+app.get('/get-admins', (req, res) => {
+    db.query(`
+        SELECT a.*, u.username 
+        FROM admins a 
+        LEFT JOIN users u ON a.user_id = u.id 
+        ORDER BY a.created_at DESC
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе администраторов:', err);
+            return res.status(500).json({ error: 'Ошибка при получении администраторов' });
+        }
+        res.json(results);
+    });
+});
+
+// Получение всех пользователей
+app.get('/get-users', (req, res) => {
+    db.query(`
+        SELECT id, username, steam_id 
+        FROM users 
+        WHERE id NOT IN (SELECT user_id FROM admins WHERE user_id IS NOT NULL)
+        ORDER BY username
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе пользователей:', err);
+            return res.status(500).json({ error: 'Ошибка при получении пользователей' });
+        }
+        res.json(results);
+    });
+});
+
+// Добавление нового администратора
+app.post('/add-admin', (req, res) => {
+    const { user_id, role } = req.body;
+
+    if (!user_id || !role) {
+        return res.status(400).json({ error: 'ID пользователя и роль обязательны' });
+    }
+
+    // Проверяем, не является ли пользователь уже администратором
+    db.query('SELECT id FROM admins WHERE user_id = ?', [user_id], (err, results) => {
+        if (err) {
+            console.error('Ошибка при проверке администратора:', err);
+            return res.status(500).json({ error: 'Ошибка при проверке администратора' });
+        }
+
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'Этот пользователь уже является администратором' });
+        }
+
+        // Получаем username пользователя
+        db.query('SELECT username FROM users WHERE id = ?', [user_id], (err, userResults) => {
+            if (err) {
+                console.error('Ошибка при получении username:', err);
+                return res.status(500).json({ error: 'Ошибка при получении данных пользователя' });
+            }
+
+            if (userResults.length === 0) {
+                return res.status(400).json({ error: 'Пользователь не найден' });
+            }
+
+            const username = userResults[0].username;
+
+            // Генерируем временный пароль
+            const tempPassword = Math.random().toString(36).slice(-8); // 8-символьный пароль
+            const hashedPassword = bcrypt.hashSync(tempPassword, 10);
+
+            // Добавляем администратора с временным паролем
+            db.query('INSERT INTO admins (user_id, username, password_hash, role, is_temp_password) VALUES (?, ?, ?, ?, ?)', 
+                [user_id, username, hashedPassword, role, true], (err, result) => {
+                if (err) {
+                    console.error('Ошибка при добавлении администратора:', err);
+                    return res.status(500).json({ error: 'Ошибка при добавлении администратора' });
+                }
+
+                // Обновляем роль пользователя в таблице users
+                db.query('UPDATE users SET role = ? WHERE id = ?', [role, user_id], (err, updateResult) => {
+                    if (err) {
+                        console.error('Ошибка при обновлении роли пользователя:', err);
+                        // Не возвращаем ошибку, так как администратор уже добавлен
+                    }
+                    
+                    res.json({ 
+                        message: 'Администратор добавлен!', 
+                        id: result.insertId,
+                        tempPassword: tempPassword // Возвращаем временный пароль
+                    });
+                });
+            });
+        });
+    });
+});
+
+// Редактирование администратора
+app.put('/edit-admin/:id', (req, res) => {
+    const adminId = req.params.id;
+    const { user_id, role } = req.body;
+
+    console.log('Получен PUT-запрос для обновления администратора с ID:', adminId);
+
+    // Получаем username пользователя
+    db.query('SELECT username FROM users WHERE id = ?', [user_id], (err, userResults) => {
+        if (err) {
+            console.error('Ошибка при получении username:', err);
+            return res.status(500).json({ error: 'Ошибка при получении данных пользователя' });
+        }
+
+        if (userResults.length === 0) {
+            return res.status(400).json({ error: 'Пользователь не найден' });
+        }
+
+        const username = userResults[0].username;
+
+        db.query(
+            'UPDATE admins SET user_id = ?, username = ?, role = ? WHERE id = ?',
+            [user_id, username, role, adminId],
+            (err, result) => {
+                if (err) {
+                    console.error('Ошибка при обновлении администратора:', err);
+                    return res.status(500).json({ error: 'Ошибка при обновлении администратора' });
+                }
+
+                // Обновляем роль пользователя в таблице users
+                db.query('UPDATE users SET role = ? WHERE id = ?', [role, user_id], (err, updateResult) => {
+                    if (err) {
+                        console.error('Ошибка при обновлении роли пользователя:', err);
+                        // Не возвращаем ошибку, так как администратор уже обновлен
+                    }
+                    
+                    console.log('Администратор обновлен с ID:', adminId);
+                    res.json({ message: 'Администратор обновлен!' });
+                });
+            }
+        );
+    });
+});
+
+// Удаление администратора
+app.delete('/delete-admin/:id', (req, res) => {
+    const adminId = req.params.id;
+
+    console.log('Получен DELETE-запрос для удаления администратора с ID:', adminId);
+
+    // Сначала получаем user_id администратора
+    db.query('SELECT user_id FROM admins WHERE id = ?', [adminId], (err, adminResult) => {
+        if (err) {
+            console.error('Ошибка при получении данных администратора:', err);
+            return res.status(500).json({ error: 'Ошибка при получении данных администратора' });
+        }
+
+        if (adminResult.length === 0) {
+            return res.status(400).json({ error: 'Администратор не найден' });
+        }
+
+        const userId = adminResult[0].user_id;
+
+        // Удаляем администратора
+        db.query('DELETE FROM admins WHERE id = ?', [adminId], (err, result) => {
+            if (err) {
+                console.error('Ошибка при удалении администратора:', err);
+                return res.status(500).json({ error: 'Ошибка при удалении администратора' });
+            }
+
+            // Обновляем роль пользователя обратно на 'user'
+            db.query('UPDATE users SET role = ? WHERE id = ?', ['user', userId], (err, updateResult) => {
+                if (err) {
+                    console.error('Ошибка при обновлении роли пользователя:', err);
+                    // Не возвращаем ошибку, так как администратор уже удален
+                }
+                
+                console.log('Администратор с ID удален:', adminId);
+                res.json({ message: 'Администратор удален' });
+            });
+        });
+    });
+});
+
+// Получение ID администратора по username
+app.get('/get-admin-id/:username', (req, res) => {
+    const username = req.params.username;
+    
+    db.query('SELECT id FROM admins WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Ошибка при получении ID администратора:', err);
+            return res.status(500).json({ error: 'Ошибка при получении ID администратора' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Администратор не найден' });
+        }
+        
+        res.json({ adminId: results[0].id });
+    });
+});
+
+// Проверка временного пароля администратора
+app.get('/check-temp-password/:username', (req, res) => {
+    const username = req.params.username;
+    
+    db.query('SELECT is_temp_password FROM admins WHERE username = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Ошибка при проверке временного пароля:', err);
+            return res.status(500).json({ error: 'Ошибка при проверке временного пароля' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Администратор не найден' });
+        }
+        
+        res.json({ isTempPassword: results[0].is_temp_password });
+    });
+});
+
+// Смена пароля администратора
+app.post('/change-admin-password', (req, res) => {
+    const { adminId, currentPassword, newPassword } = req.body;
+
+    if (!adminId || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Все поля обязательны' });
+    }
+
+    // Проверяем текущий пароль
+    db.query('SELECT password_hash FROM admins WHERE id = ?', [adminId], (err, results) => {
+        if (err) {
+            console.error('Ошибка при проверке пароля:', err);
+            return res.status(500).json({ error: 'Ошибка при проверке пароля' });
+        }
+
+        if (results.length === 0) {
+            return res.status(400).json({ error: 'Администратор не найден' });
+        }
+
+        const storedHash = results[0].password_hash;
+
+        // Проверяем текущий пароль
+        if (!bcrypt.compareSync(currentPassword, storedHash)) {
+            return res.status(400).json({ error: 'Неверный текущий пароль' });
+        }
+
+        // Хешируем новый пароль
+        const newPasswordHash = bcrypt.hashSync(newPassword, 10);
+
+        // Обновляем пароль и отмечаем, что это больше не временный пароль
+        db.query('UPDATE admins SET password_hash = ?, is_temp_password = ? WHERE id = ?', [newPasswordHash, false, adminId], (err, result) => {
+            if (err) {
+                console.error('Ошибка при смене пароля:', err);
+                return res.status(500).json({ error: 'Ошибка при смене пароля' });
+            }
+            res.json({ message: 'Пароль успешно изменен!' });
+        });
+    });
+});
 
 // Сервер для обслуживания статических файлов (например, изображений)
 app.use('/uploads', express.static('uploads'));
