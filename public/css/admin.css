@@ -1,0 +1,206 @@
+/* General styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #1c1c1c;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Чтобы контент был выровнен по верхней части */
+    min-height: 100vh; /* Высота страницы на 100% (с возможностью прокрутки) */
+}
+
+/* Header styles */
+header {
+    background-color: #1a1a1a;
+    padding: 15px;
+    text-align: center;
+}
+
+/* Стили для логотипа */
+.logo {
+    cursor: pointer;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    z-index: 999;
+    display: inline-block; /* Логотип будет вести себя как строчный блок, чтобы не захватывать лишнее пространство */
+    position: relative; /* Убираем влияние на другие элементы */
+}
+
+.logo img {
+    width: 150px;
+    height: auto;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    display: block; /* Делаем изображение блочным элементом, чтобы оно не выходило за пределы контейнера */
+    object-fit: contain; /* Позволяет картинке сохранять пропорции */
+}
+
+/* Уменьшаем область наведения на логотип */
+.logo:hover img {
+    transform: scale(1.1); /* Увеличиваем только изображение, а не весь контейнер */
+    filter: brightness(1.2); /* Немного увеличиваем яркость */
+}
+
+/* Стили для кнопки с возвратом */
+.back-btn-container {
+    position: fixed;
+    top: 10px;  /* Отступ сверху */
+    left: 10px; /* Отступ слева */
+    z-index: 1001; /* Убедимся, что кнопка будет выше логотипа */
+    padding-right: 20px; /* Добавим отступ справа от кнопки */
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+}
+
+/* Убираем фокусное кольцо для кнопки стрелки */
+.back-btn:focus {
+    outline: none !important; 
+}
+
+/* Убираем эффект при наведении на кнопку стрелки */
+.back-btn:hover {
+    transform: none !important; 
+}
+
+.back-btn img {
+    width: 30px;  
+    height: 30px; 
+}
+
+/* Warning bar (Top Marquee) */
+.warning-bar {
+    background-color: #FF0000;
+    color: white;
+    text-align: center;
+    padding: 5px;
+    margin-bottom: 0; 
+}
+
+/* Form styles */
+.form-admin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 30px;
+    flex-grow: 1; /* Это гарантирует, что форма будет занимать доступное пространство */
+}
+
+h2.projects-title {
+    font-size: 24px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* Input fields and labels */
+.input-field {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    width: 100%;
+}
+
+.input-field label {
+    width: 40%;
+    font-weight: bold;
+    margin-right: 5px; /* Отступ между лейблом и полем */
+}
+
+.input-field input[type="text"], .input-field input[type="password"] {
+    width: 70%;
+    padding: 10px;
+    font-size: 15px;
+    border-radius: 7px;
+    border: 1px solid #ccc;
+}
+
+/* Buttons (Login and Forgot Password) */
+.btn-login, .btn-forgot-password {
+    width: 45%; /* Устанавливаем одинаковую ширину для обеих кнопок */
+    padding: 10px;
+    margin: 0 5px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    display: inline-block;
+    text-align: center;
+}
+
+/* Эффект для кнопки входа при наведении */
+.btn-login:hover {
+    background-color: #0056b3;
+}
+
+/* Эффект для кнопки "Забыли пароль?" при наведении */
+.btn-forgot-password:hover {
+    background-color: #0056b3;
+}
+
+.reset-password-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+    margin-top: 10px;
+}
+
+.reset-password-btn:hover {
+    background-color: #2980b9;
+    transform: scale(1.05);
+}
+
+.reset-password-btn:active {
+    background-color: #1c5980;
+    transform: scale(1);
+}
+
+/* Footer styles */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    margin-top: auto; /* Чтобы футер всегда был внизу */
+}
+
+/* Footer warning bar (Bottom Marquee) */
+footer .warning-bar {
+    background-color: #FF0000;
+    color: white;
+    text-align: center;
+    padding: 5px;
+}
+
+footer .warning-bar marquee {   
+    font-size: 18px;
+}
+
+/* Additional styling adjustments */
+footer .footer-content p {
+    font-size: 14px;
+    margin: 0;
+}
+
+footer .footer-content {
+    text-align: center;
+}
+
+/* Remove extra space under content */
+body {
+    margin-bottom: 0;
+}

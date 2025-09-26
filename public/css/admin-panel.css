@@ -1,0 +1,431 @@
+/* Общие стили */
+body, header, .container, footer {
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+body {
+    background-color: #1c1c1c;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    background-color: #1a1a1a;
+    padding: 15px;
+    text-align: center;
+}
+
+.logo {
+    cursor: pointer;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    z-index: 999;
+    display: inline-block; 
+    position: relative; 
+}
+
+.logo img {
+    width: 150px;
+    height: auto;
+    transition: transform 0.3s ease, filter 0.3s ease;
+    display: block;
+    object-fit: contain;
+}
+
+.logo:hover img {
+    transform: scale(1.1); 
+    filter: brightness(1.2); 
+}
+
+/* Навигационное меню */
+.navbar {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    background-color: #333;
+    border-radius: 5px;
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.navbar a:hover {
+    background-color: #FF0B0B;
+    transform: scale(1.05);
+}
+
+.navbar a.active-page {
+    border-bottom: 2px solid #FF0B0B;
+}
+
+/* Контейнер с контентом */
+.container {
+    display: flex;
+    padding: 20px;
+}
+
+/* Боковая панель */
+.sidebar {
+    position: fixed;
+    width: 250px; 
+    background-color: #2a2a2a;
+    padding: 20px;
+    overflow: auto;
+    margin-right: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+}
+
+.sidebar button {
+    width: 100%;
+    padding: 10px;
+    background-color: #444;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.sidebar button:hover {
+    background-color: #FF0B0B;
+}
+
+/* Основной контент */
+#content-area {
+    margin-left: 300px;
+    flex-grow: 1;
+    background-color: #333;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Редактор товаров */
+.editor-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.editor-header {
+    font-size: 24px;
+    color: #fff;
+}
+
+.editor-buttons {
+    display: flex;
+    justify-content: flex-end;
+    width: 100%;
+}
+
+.editor-buttons button {
+    background-color: #FF0B0B;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.editor-buttons button:hover {
+    background-color: #d60000;
+}
+
+#product-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: flex-start;
+    overflow-y: auto;
+}
+
+.product-item {
+    background-color: #333;
+    color: white;
+    border-radius: 10px;
+    width: 150px;
+    margin: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+}
+
+.product-image {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.product-name {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+#product-description, #edit-product-description {
+    width: 95%;
+    padding: 10px;
+    background-color: #555;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    margin-bottom: 10px;
+    resize: vertical;
+}
+
+.product-price {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff0;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* Модальные окна */
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color:#333;
+    padding: 10px;
+    border-radius: 10px;
+    width: 400px;
+    z-index: 1000;
+    flex-direction: column;
+    gap: 20px;
+    transition: width 0.5s ease; 
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-content {
+    background-color: #834040;
+    color: white;
+    padding: 20px;
+    border-radius: 10px;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#modal-title {
+    text-align: center; /* Центрируем текст по горизонтали */
+    margin: 10;
+    font-size: 24px; /* Примерный размер текста */
+}
+
+/* Поля ввода и кнопки */
+input[type="text"], input[type="number"], .file-upload-container {
+    width: 95%;
+    padding: 10px;
+    background-color: #555;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.file-upload-container {
+    width: 90%;
+    border: 2px dashed #ccc;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+#file-upload-label {
+    display: inline-block;
+    color: #555;
+    font-size: 16px;
+    cursor: pointer;
+}
+#file-name {
+    font-size: 14px;
+    color: #aaa;
+    display: block;
+    margin-top: 10px;
+}
+
+select {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    color: #333;
+    font-size: 16px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+select:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Стили предпросмотра товара */
+.preview-section {
+    display: none;
+    background-color: #444;
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+    position: absolute;
+    top: 50%;
+    left: 63%; /* Размещение справа */
+    transform: translateY(-50%);
+    width: 200px;
+}
+
+#preview-section h4 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+#product-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#product-preview img {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 15px;
+}
+
+#product-preview p {
+    margin: 5px 0;
+    font-size: 16px;
+    color: #fff;
+}
+
+#preview-btn {
+    background-color: #007bff;
+    margin-top: 10px;
+}
+
+/* Кнопки в модальном окне */
+.modal button {
+    padding: 10px 20px;
+    background-color: #FF0B0B;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.modal button:hover {
+    background-color: #d60000;
+}
+
+/* Стили для редактирования товара */
+#edit-product-modal.show {
+    display: flex !important;
+}
+
+
+#edit-product-modal button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+#edit-product-image {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 200px;
+    margin-top: 10px;
+}
+
+#edit-product-image-container {
+    text-align: center;
+}
+
+#edit-product-modal #edit-product-btn {
+    background-color: #4CAF50;
+    color: white;
+    margin-bottom: 10px;
+}
+
+#edit-product-modal #delete-product-btn {
+    background-color: #F44336;
+    color: white;
+}
+
+#change-image-btn {
+    background-color: #FF6347;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+#change-image-btn:hover {
+    background-color: #FF4500;
+}
+
+/* Крестик для закрытия модального окна */
+.close-btn-add,
+.close-btn-edit {
+    cursor: pointer;
+    font-size: 40px;  /* Увеличиваем размер крестика */
+    color: #fff;
+    background: none;  /* Убираем фон */
+    border: none;
+    padding: 5px 10px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.close-btn:hover {
+    color: #ff0000;  /* Меняем цвет при наведении */
+}
+
+/* Footer */
+footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px;
+    margin-top: auto;
+}

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль | Demonic Projects</title>
+    <link rel="stylesheet" href="css/global.css">
+    <link rel="stylesheet" href="css/profile.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <a href="/"><img src="/img/logotip-demonic.svg" alt="Logo"></a>
+</div>
+    <nav class="navbar">
+        <ul class="menu">
+            <li><a href="/">Главная</a></li>
+            <li><a href="#">Магазины</a></li>
+            <li><a href="#footer">Контакты</a></li>
+            <li><a href="javascript:void(0);" class="active-page" id="profile-link">Профиль</a></li>
+
+        </ul>
+    </nav>
+</header>
+
+<div class="wrapper">
+    <div class="profile-container">
+      <!-- Профиль пользователя -->
+      <div class="user-info">
+        <div class="user-avatar-container">
+            <img src="default-avatar.png" alt="Аватар" class="user-avatar">
+        </div>
+        <div class="user-details">
+            <div class="user-details-info">
+                <h2 id="username">Neforov</h2> 
+                <p><strong>Баланс:</strong> <span id="balance">0 ₽</span></p>
+                <p><strong>Скидка:</strong> <span id="discount">0%</span></p>
+                <p><strong>Steam ID:</strong> <span id="steam-id">0</span></p>
+            </div>
+        </div>
+    </div>
+
+      <!-- Контейнер с боковым меню и контентом -->
+      <div class="profile-row">
+          <!-- Боковое меню -->
+          <div class="profile-sidebar">
+              <button class="profile-menu-btn" data-section="history">История</button>
+              <button class="profile-menu-btn" data-section="finance">Финансы</button>
+              <button class="profile-menu-btn" data-section="promocodes">Промокоды</button>
+              <button class="profile-menu-btn" data-section="messages">Сообщения</button>
+              <button class="profile-menu-btn" data-section="freeze">Заморозка</button>
+              <button class="profile-menu-btn" data-section="upgrade">Улучшение</button>
+              <button class="profile-admin-btn" style="display:none;" id="admin-button">Админка</button> <!-- Скрыта по умолчанию -->
+              <button class="profile-logout-btn">Выйти</button>
+          </div>
+
+          <!-- Контейнер с информацией -->
+          <div class="profile-content">
+              <div class="profile-content-area">
+                  <h2>Информация</h2>
+                  <div id="dynamic-content">Выберите раздел в меню слева.</div>
+              </div>
+          </div>
+      </div>
+  </div>
+
+  <div id="auth-notification" class="modal">
+    <div class="modal-content">
+        <h2>Вы не авторизованы!</h2>
+        <p>Чтобы продолжить, войдите в аккаунт или вернитесь на главную страницу.</p>
+        <div class="modal-buttons">
+            <button id="login-btn">Войти</button>
+            <button id="home-btn">На главную</button>
+        </div>
+    </div>
+</div>
+
+</div>
+
+<footer id="footer">
+    <div class="footer-content">
+      <div class="left-section">
+        <p><a href="#">Политика конфиденциальности</a></p>
+        <p><a href="#">Пользовательское соглашение</a></p>
+      </div>
+  
+      <div class="unicode">
+        <p>&copy; 2022–2025 Demonic Project</p>
+      </div>
+      
+      <div class="social-icons">
+        <a href="https://vk.com" target="_blank">
+          <img src="img/icon-vk.svg" alt="VK" class="social-icon">
+        </a>
+        <a href="https://discord.com" target="_blank">
+          <img src="img/icon-discord.svg" alt="Discord" class="social-icon">
+        </a>
+        <a href="https://youtube.com" target="_blank">
+          <img src="img/Icon-youtube.svg" alt="YouTube" class="social-icon">
+        </a>
+        <a href="https://t.me" target="_blank">
+          <img src="img/icon-telegram.svg" alt="Telegram" class="social-icon">
+        </a>
+      </div>
+  
+      <div class="right-section">
+        <p><a href="#">Служба поддержки</a></p>
+        <p><a href="#">Часто задаваемые вопросы</a></p>
+        <p><a href="#">Заявки на модераторов</a></p>
+      </div>
+    </div>
+  </footer>
+
+<script src="js/profile.js"></script>
+</body>
+</html>

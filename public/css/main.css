@@ -1,0 +1,310 @@
+* {
+  user-select: text !important; 
+}
+img {
+  user-select: none !important; 
+}
+
+.project-name-container {
+  position: relative;
+  text-align: center;
+  padding: 50px 0;
+  height: 190px; /* Увеличиваем высоту контейнера */
+}
+
+.project-name-container .background-logo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;  /* Обеспечиваем правильный размер */
+  background-image: url('/img/back.png');
+  background-position: center;
+  opacity: 1; /* Убираем прозрачность */
+}
+
+.projects-title {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 40px;
+  font-weight: 700;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Контейнер для проектов */
+.projects-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  width: 100%;
+  margin-top: 40px;
+  height: 350px;
+  flex-direction: row; /* Горизонтальное направление */
+}
+
+.project-block {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 80%;
+  opacity: 0;
+  transition: all 0.5s ease;
+}
+
+.project-block.active {
+  opacity: 1;
+}
+
+.project-card {
+  width: 550px;
+  height: 300px;
+  margin-right: 100px;
+  background-color: #ccc;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.project-description {
+  color:#fff;
+  width: 640px;
+  padding: 20px;
+  text-align: left;
+  background-color: transparent;
+  z-index: 1;
+}
+
+.project-image-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.project-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Используем contain для сохранения пропорций */
+    max-height: 100%; /* Убираем искажения */
+    object-position: center; /* Центрируем изображение */
+  }
+
+.prev-btn, .next-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 30px;
+  color: #fff;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  padding: 80px;
+}
+
+.prev-btn {
+  left: 40px; /* Уменьшаем отступ от края */
+}
+
+.next-btn {
+  right: 40px; /* Уменьшаем отступ от края */
+}
+
+.prev-btn:hover, .next-btn:hover {
+  color: #FF0B0B;
+}
+
+.dot {
+  height: 10px;
+  width: 10px;
+  margin: 0 5px;
+  background-color: #ffffff;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.3s ease;
+}
+
+/* Секция новостей */
+.news-section {
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.news-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;  /* Центрируем по горизонтали */
+  gap: 30px;
+}
+.news-title {
+  font-size: 40px;
+  font-weight: bold;
+  text-align: center; /* Заголовок по центру */
+  margin-bottom: 20px;
+}
+
+.news-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  width: 100%;
+  height: 100%; /* Растягиваем контейнер по высоте */
+}
+
+.game-icons {
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* Центрируем иконки по вертикали */
+  align-items: center;     /* Центрируем иконки по горизонтали */
+  gap: 15px;
+  height: auto;  /* Убираем фиксированную высоту */
+}
+
+
+.game-icon-placeholder {
+  width: 50px;
+  height: 50px;
+  background-color: #ccc;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.game-icon-placeholder:hover {
+  transform: scale(1.2);
+}
+
+.game-icon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.news-item {
+  display: flex;
+  flex-direction: row; /* Горизонтальное направление для изображения и текста */
+  align-items: center;
+  gap: 30px;
+}
+
+.news-image-placeholder {
+  width: 500px;
+  height: 300px;
+  background-color: #ccc;
+  border-radius: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+.news-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 15px;
+}
+
+.news-text {
+  max-width: 600px;
+  font-size: 18px;
+  text-align: left;
+  color: #000000;
+  padding: 0 50px;
+}
+
+#subscribe-btn {
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  padding: 15px 30px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+}
+
+#subscribe-btn:hover {
+  background-color: #d60000;
+}
+
+#back-to-project-news {
+  background-color: #f5f5f5;
+  color: #000;
+  padding: 15px 30px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+}
+
+#back-to-project-news:hover {
+  background-color: #d60000;
+}
+/* Модальное окно */
+.modal {
+    display: none; /* Скрываем модальное окно по умолчанию */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Центрируем окно */
+    background-color: rgba(0, 0, 0, 0.7); /* Фон */
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    z-index: 1000; /* Чтобы окно было поверх других элементов */
+    overflow: hidden;
+}
+.modal-content {
+  background-color: rgb(39, 35, 35);
+  color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  width: 400px;
+  text-align: center;
+}
+
+#close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 25px;
+  cursor: pointer;
+  color: #fff;
+  background: none;
+  border: none;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+input[type="email"] {
+  width: 80%;
+  padding: 10px;
+  margin: 20px 0;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+  font-size: 16px;
+}

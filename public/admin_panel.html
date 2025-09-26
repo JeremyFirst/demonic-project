@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ панель</title>
+    <link rel="stylesheet" href="css/admin-panel.css"> <!-- Подключим стили для админки -->
+</head>
+<body>
+
+<header>
+    <div class="logo">
+        <a href="/"><img src="/img/logotip-demonic.svg" alt="Logo"></a>
+    </div>
+    <nav class="navbar">
+        <a href="#" class="active-page">Магазин (ред)</a>
+        <a href="#">Инфо</a>
+        <a href="#">Статистика</a>
+        <a href="#">Тех поддержка</a>
+        <a href="#">Администраторы</a>
+    </nav>
+</header>
+
+<div class="container">
+    <!-- Боковое меню -->
+    <div class="sidebar">
+        <button id="add-product-btn">Добавить товар</button>
+        <button id="add-category-btn">Добавить категорию</button>
+        <button id="add-sorting-btn">Сортировка</button>
+        <button id="add-discount-btn">Управление скидками</button>
+        <button id="add-promo-btn">Управление промокодами</button>
+    </div>
+
+    <!-- Основной контент -->
+    <div id="content-area">
+        <!-- Контейнер для редактора товаров -->
+        <div class="editor-container">
+            <div class="editor-header">Редактор товаров</div>
+            <div class="editor-buttons">
+                <button id="add-product">Добавить новый товар</button> 
+            </div>
+            <div id="product-list" class="editor-items">
+                <!-- Товары будут отображаться здесь -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальные окна -->
+
+<div id="product-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn-add">&times;</span> <!-- Крестик для закрытия -->
+        <h2 id="modal-title">Добавить товар</h2>
+        
+        <!-- Загрузка изображения товара -->
+        <div id="file-upload-container" class="file-upload-container">
+            <input type="file" id="product-image" accept="image/*" style="display: none;"> 
+            <label for="product-image" id="file-upload-label">
+                <span>Перетащите изображение сюда</span>
+                <p id="file-name">Файл не выбран</p>
+            </label>
+        </div>
+        
+        <input type="text" id="product-name" placeholder="Название товара">
+        <input type="number" id="product-price" placeholder="Цена товара">
+        <textarea id="product-description" name="description" placeholder="Описание товара"></textarea>
+        
+        <!-- Селекторы для игры и категории -->
+        <label for="game-select">Выберите игру:</label>
+        <select id="game-select">
+            <option value="2">RUST</option>
+            <option value="3">SCP</option>
+            <option value="1">Minecraft</option>
+        </select>
+
+        <label for="category-select">Выберите категорию:</label>
+        <select id="category-select">
+            <option value="1">Категория 1</option>
+            <option value="2">Категория 2</option>
+        </select>
+
+        <button id="preview-btn">Предпросмотр</button> 
+        <button id="clear-btn">Очистить</button> 
+        <button id="save-product-btn">Сохранить товар</button>
+    </div>
+    <div class="preview-section" id="preview-section">
+        <div id="product-preview">
+            <!-- Здесь будет отображаться предварительный просмотр товара -->
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для редактирования товара -->
+<div id="edit-product-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn-edit">&times;</span>
+        <h2 id="modal-title">Редактировать товар</h2>
+        <form id="edit-product-form">
+            <input id="edit-product-id" type="hidden">
+
+            <!-- Изображение товара -->
+            <div id="edit-product-image-container" style="text-align: center;">
+                <input type="file" id="edit-product-image-upload" name="product-image" style="display: none;">
+                <button type="button" id="change-image-btn">Изменить изображение</button>
+                <br>
+                <img id="edit-product-image" src="" alt="Product Image">
+            </div>
+
+            <label for="edit-product-name">Название товара</label>
+            <input type="text" id="edit-product-name" name="product-name" required>
+            
+            <label for="edit-product-description">Описание</label>
+            <textarea id="edit-product-description" name="product-description"></textarea>
+
+            <label for="edit-product-price">Цена</label>
+            <input type="number" id="edit-product-price" name="product-price" required>
+
+            <!-- Селекторы для игры и категории -->
+            <label for="edit-game-select">Игра:</label>
+            <select id="edit-game-select">
+                <option value="1">Minecraft</option>
+                <option value="2">RUST</option>
+                <option value="3">SCP</option>
+            </select>
+
+            <label for="edit-category-select">Категория:</label>
+            <select id="edit-category-select">
+                <option value="1">Категория 1</option>
+                <option value="2">Категория 2</option>
+            </select>
+
+            <button type="submit" id="edit-product-btn">Редактировать товар</button>
+            <button type="button" id="delete-product-btn">Удалить товар</button>
+        </form>
+    </div>
+</div>
+
+
+<footer id="footer">
+    <p>&copy; 2022–2025 Demonic Project</p>
+</footer>
+
+<script src="js/admin_panel.js"></script> 
+</body>
+</html>

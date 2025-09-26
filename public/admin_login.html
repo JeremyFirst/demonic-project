@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация администратора</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+    <header>
+        <div class="back-btn-container">
+            <button id="back-to-profile-btn" class="back-btn">
+                <img src="/img/arrow-left.svg" alt="Back to Profile" />
+            </button>
+        </div>
+        <div class="logo">
+            <a href="/"><img src="/img/logotip-demonic.svg" alt="Logo"></a>
+        </div>
+    </header>
+
+    <div class="warning-bar">
+        <marquee>⚠️ Вся информация в админских инструментах является конфиденциальной. ⚠️</marquee>
+    </div>
+
+    <section class="form-admin">
+        <h2 class="projects-title" id="welcome-message">Добро пожаловать, !</h2>
+        
+        <form action="/admin/login" method="POST" class="admin-login-form">
+            <div class="input-field">
+                <label for="login">Логин:</label>
+                <input type="text" id="login" name="login" required>
+            </div>
+
+            <div class="input-field">
+                <label for="password">Пароль:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+
+            <button type="submit" class="btn-login">Войти</button>
+            <button type="button" class="btn-forgot-password">Забыли пароль?</button>
+        </form>
+    </section>
+
+    <div class="footer-content">
+        <div class="warning-bar">
+            <marquee>⚠️ Вся информация в админских инструментах является конфиденциальной. ⚠️</marquee>
+        </div>
+
+    <footer id="footer">
+        <p>&copy; 2022–2025 Demonic Project</p>
+    </footer>
+
+    <script src="/js/admin_login.js"></script>
+</body>
+</html>

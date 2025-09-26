@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Demonic Projects</title>
+  <link rel="stylesheet" href="/css/global.css?v=1">
+  <link rel="stylesheet" href="/css/main.css?v=1">
+
+</head>
+<body>
+    <header>
+      <div class="logo">
+        <img src="/img/logotip-demonic.svg" alt="Logo">
+    </div>
+        <nav class="navbar">
+          <ul class="menu">
+            <li><a href="#" class="active-page">Главная</a></li>
+            <li><a href="#">Магазины</a></li>
+            <li><a href="#footer">Контакты</a></li>
+            <li><a href="http://localhost:3000/auth/steam" id="auth-btn">Авторизация</a></li>
+            <li class="profile-info" style="display: none;">
+                <a href="http://localhost:3000/profile.html" class="profile-name"></a>
+                <img class="profile-avatar" src="" alt="Avatar">
+            </li>
+          <button class="menu-btn">&#9776;</button> 
+        </nav>
+    </header>
+
+<div class="project-name-container">
+  <div class="background-logo"></div>
+</div>
+
+<section class="wrapper">
+    <section class="container">
+      <h2 class="projects-title">Наши проекты</h2>
+      <div class="projects-selector">
+        <!-- Блок 1 -->
+        <div class="project-block">
+          <div class="project-card">
+            <div class="project-image-container">
+              <img src="/img/rust-icon.png" alt="Rust Gameplay" class="project-image">
+            </div>
+          </div>
+          <div class="project-description">
+            <h2>RUST</h2>
+            <p>RUST — это многопользовательская игра на выживание с открытым миром, в которой игроки должны собирать ресурсы, строить укрытия, охотиться, защищаться от других игроков и выживать в условиях жестокой природы. Игра предлагает огромное количество возможностей для стратегии, альянсов и сражений с другими игроками. В ней важны навыки выживания, общения и планирования.</p>
+          </div>
+        </div>
+        <!-- Блок 2 -->
+        <div class="project-block">
+          <div class="project-card">
+            <div class="project-image-container">
+              <img src="/img/minecraft-icon.png" alt="Minecraft Gameplay" class="project-image">
+            </div>
+          </div>
+          <div class="project-description">
+            <h2>Minecraft</h2>
+            <p>Minecraft — это популярная песочница, где игроки могут строить, исследовать и выживать в процедурно генерируемом мире. Игра позволяет создавать собственные миры с помощью различных блоков, а также взаимодействовать с другими игроками через многопользовательские серверы. Minecraft поддерживает различные режимы, от творческого до выживания, и привлекает игроков всех возрастов.</p>
+          </div>
+        </div>
+        <!-- Блок 3 -->
+        <div class="project-block">
+          <div class="project-card">
+            <div class="project-image-container">
+              <img src="/img/scp-icon.png" alt="SCP Gameplay" class="project-image">
+            </div>
+          </div>
+          <div class="project-description">
+            <h2>SCP: Secret Laboratory</h2>
+            <p>SCP: Secret Laboratory — это многопользовательская игра в жанре хоррор с элементами выживания, основанная на мифах и объектах из вселенной SCP. Игроки могут быть в роли ученых, охранников, заключенных или SCP объектов, сражаясь за выживание или выполнение своих целей. Это напряженная игра, где важна командная работа, тактика и внимательность.</p>
+          </div>
+        </div>
+
+        <div class="navigation">
+          <button class="prev-btn">&#10094;</button>
+          <button class="next-btn">&#10095;</button>
+        </div>
+      </div>
+    </section>
+  
+    <section class="news-section">
+      <div class="news-container">
+          <h2 class="news-title">Новости SCP</h2>
+          <div class="news-content">
+              <!-- Иконки игр слева, теперь центрируем по контейнеру -->
+              <div class="game-icons">
+                  <div class="game-icon-placeholder">
+                      <img src="img/rust-icon.png" alt="Rust" class="game-icon-img">
+                  </div>
+                  <div class="game-icon-placeholder">
+                      <img src="img/minecraft-icon.png" alt="Minecraft" class="game-icon-img">
+                  </div>
+                  <div class="game-icon-placeholder">
+                      <img src="img/scp-icon.png" alt="SCP" class="game-icon-img">
+                  </div>
+              </div>
+  
+              <!-- Контейнер для изображения и текста -->
+              <div class="news-item">
+                <div class="news-image-placeholder">
+                    <img id="news-image" src="" alt="News Image" class="news-image">
+                </div>
+                <div class="news-text">
+                    <p id="news-text">Здесь будут новости для игры RUST, Minecraft или SCP...</p>
+                    <button id="back-to-project-news" style="display: none;">Вернуться к новостям проекта</button>
+                    <button id="subscribe-btn">Подписаться</button>
+                </div>
+            </div>
+          </div>
+      </div>
+  </section>
+  
+  <!-- Модальное окно для подписки -->
+  <div id="subscribe-modal" class="modal">
+      <div class="modal-content">
+          <span class="close-btn">&times;</span>
+          <h2>Подписка на рассылку</h2>
+          <input type="email" id="email" placeholder="Введите ваш email" required>
+          <button id="submit-email">Подписаться</button>
+      </div>
+  </div>
+</section>
+
+<footer id="footer">
+  <div class="footer-content">
+    <div class="left-section">
+      <p><a href="#">Политика конфиденциальности</a></p>
+      <p><a href="#">Пользовательское соглашение</a></p>
+    </div>
+
+    <div class="unicode">
+      <p>&copy; 2022–2025 Demonic Project</p>
+    </div>
+    
+    <div class="social-icons">
+      <a href="https://vk.com" target="_blank">
+        <img src="/img/icon-vk.svg" alt="VK" class="social-icon">
+      </a>
+      <a href="https://discord.com" target="_blank">
+        <img src="/img/icon-discord.svg" alt="Discord" class="social-icon">
+      </a>
+      <a href="https://youtube.com" target="_blank">
+        <img src="/img/Icon-youtube.svg" alt="YouTube" class="social-icon">
+      </a>
+      <a href="https://t.me" target="_blank">
+        <img src="/img/icon-telegram.svg" alt="Telegram" class="social-icon">
+      </a>
+    </div>
+
+    <div class="right-section">
+      <p><a href="#">Служба поддержки</a></p>
+      <p><a href="#">Часто задаваемые вопросы</a></p>
+      <p><a href="#">Заявки на модераторов</a></p>
+    </div>
+  </div>
+</footer>
+
+
+<script src="js/script.js"></script>
+
+</body>
+</html>
