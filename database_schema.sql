@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS items (
     game_id INT,
     category_id INT,
     is_active BOOLEAN DEFAULT TRUE,
+    sort_order INT DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE SET NULL,
@@ -94,6 +95,38 @@ CREATE TABLE IF NOT EXISTS order_items (
     price DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
     FOREIGN KEY (item_id) REFERENCES items(id) ON DELETE CASCADE
+);
+
+-- Таблица переводов между пользователями
+CREATE TABLE IF NOT EXISTS transfers (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_id INT NOT NULL,
+    recipient_id INT NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    commission DECIMAL(10,2) NOT NULL,
+    message TEXT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Таблица скидок
+CREATE TABLE IF NOT EXISTS discounts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    type ENUM('percentage', 'fixed') NOT NULL,
+    value DECIMAL(10,2) NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    target_type ENUM('all', 'game', 'category', 'product') DEFAULT 'all',
+    target_id INT NULL,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_discounts_target_type (target_type),
+    INDEX idx_discounts_status (status),
+    INDEX idx_discounts_dates (start_date, end_date)
 );
 
 -- Вставка базовых данных
@@ -139,3 +172,42 @@ CREATE INDEX idx_items_game_id ON items(game_id);
 CREATE INDEX idx_items_category_id ON items(category_id);
 CREATE INDEX idx_password_resets_token ON password_resets(token);
 CREATE INDEX idx_password_resets_expires ON password_resets(expires_at);
+CREATE INDEX idx_discounts_target_type ON discounts(target_type);
+CREATE INDEX idx_discounts_status ON discounts(status);
+CREATE INDEX idx_discounts_dates ON discounts(start_date, end_date);
+
+-- Добавляем тестовые скидки
+INSERT INTO discounts (name, description, type, value, start_date, end_date, target_type, target_id, status) VALUES 
+('Новогодняя распродажа', 'Скидка на все товары в честь Нового года', 'percentage', 20.00, '2024-12-25 00:00:00', '2025-01-15 23:59:59', 'all', NULL, 'active'),
+('Скидка на все товары RUST', 'Специальная скидка на все товары игры RUST', 'percentage', 25.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'game', 2, 'active'),
+('Скидка на оружие RUST', 'Специальная скидка на все оружие в RUST', 'percentage', 15.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'category', 4, 'active'),
+('Фиксированная скидка на алмазы', 'Скидка 50 рублей на алмазы', 'fixed', 50.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'product', 1, 'active');
+
+-- Таблица промокодов
+CREATE TABLE IF NOT EXISTS promocodes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    type ENUM('percentage', 'fixed') NOT NULL,
+    value DECIMAL(10,2) NOT NULL,
+    start_date DATETIME NOT NULL,
+    end_date DATETIME NOT NULL,
+    target_type ENUM('all', 'game', 'category', 'product') DEFAULT 'all',
+    target_id INT NULL,
+    usage_limit INT NULL,
+    usage_count INT DEFAULT 0,
+    status ENUM('active', 'inactive') DEFAULT 'active',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_promocodes_code (code),
+    INDEX idx_promocodes_target_type (target_type),
+    INDEX idx_promocodes_status (status),
+    INDEX idx_promocodes_dates (start_date, end_date)
+);
+
+-- Тестовые данные для промокодов
+INSERT INTO promocodes (code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status) VALUES 
+('NEWYEAR2025', 'Промокод на Новый год - скидка 20% на все товары', 'percentage', 20.00, '2024-12-25 00:00:00', '2025-01-15 23:59:59', 'all', NULL, 100, 'active'),
+('RUST50', 'Промокод для игры RUST - скидка 50 рублей', 'fixed', 50.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'game', 2, 50, 'active'),
+('WEAPONS15', 'Промокод на оружие - скидка 15%', 'percentage', 15.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'category', 4, 25, 'active'),
+('DIAMOND100', 'Промокод на алмазы - скидка 100 рублей', 'fixed', 100.00, '2024-12-01 00:00:00', '2024-12-31 23:59:59', 'product', 1, 10, 'active');

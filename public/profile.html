@@ -15,8 +15,8 @@
 </div>
     <nav class="navbar">
         <ul class="menu">
-            <li><a href="/">Главная</a></li>
-            <li><a href="#">Магазины</a></li>
+            <li><a href="/Index.html">Главная</a></li>
+            <li><a href="/store.html">Магазин</a></li>
             <li><a href="#footer">Контакты</a></li>
             <li><a href="javascript:void(0);" class="active-page" id="profile-link">Профиль</a></li>
 
@@ -31,8 +31,8 @@
         <div class="user-avatar-container">
             <img src="default-avatar.png" alt="Аватар" class="user-avatar">
         </div>
-        <div class="user-details">
-            <div class="user-details-info">
+                <div class="user-details">
+            <div class="user-details-info" data-user-id="">
                 <h2 id="username">Neforov</h2> 
                 <p><strong>Баланс:</strong> <span id="balance">0 ₽</span></p>
                 <p><strong>Скидка:</strong> <span id="discount">0%</span></p>
@@ -57,10 +57,7 @@
 
           <!-- Контейнер с информацией -->
           <div class="profile-content">
-              <div class="profile-content-area">
-                  <h2>Информация</h2>
-                  <div id="dynamic-content">Выберите раздел в меню слева.</div>
-              </div>
+              <div id="dynamic-content">Выберите раздел в меню слева.</div>
           </div>
       </div>
   </div>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин - Demonic Projects</title>
+    <link rel="stylesheet" href="/css/global.css?v=1">
+    <link rel="stylesheet" href="/css/store.css?v=1">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <img src="/img/logotip-demonic.svg?v=1" alt="Logo">
+        </div>
+        <nav class="navbar">
+            <ul class="menu">
+                <li><a href="http://localhost:3000/Index.html">Главная</a></li>
+                <li><a href="/store.html" class="active-page">Магазин</a></li>
+                <li><a href="#footer">Контакты</a></li>
+                <li><a href="http://localhost:3000/auth/steam?returnUrl=/store.html" id="auth-btn">Авторизация</a></li>
+                <li class="profile-info" style="display: none;">
+                    <div class="user-balance">
+                        <span class="balance-amount">0</span>
+                        <span class="balance-currency">₽</span>
+                    </div>
+                    <a href="http://localhost:3000/profile.html" class="profile-avatar-link">
+                        <img class="profile-avatar" src="" alt="Avatar">
+                    </a>
+                </li>
+            </ul>
+            <button class="menu-btn">&#9776;</button>
+        </nav>
+    </header>
+
+    <main class="store-container">
+        <!-- Фильтры и поиск -->
+        <div class="store-filters">
+            <div class="filters-row">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Поиск товаров..." class="search-input">
+                </div>
+                
+                <div class="filter-group">
+                    <label for="game-filter">Игра:</label>
+                    <select id="game-filter" class="filter-select">
+                        <option value="">Все игры</option>
+                    </select>
+                </div>
+                
+                
+                <div class="filter-group">
+                    <label for="sort-filter">Сортировка:</label>
+                    <select id="sort-filter" class="filter-select">
+                        <option value="name">По названию</option>
+                        <option value="price-asc">Цена: по возрастанию</option>
+                        <option value="price-desc">Цена: по убыванию</option>
+                        <option value="newest">Сначала новые</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="store-content">
+            <!-- Боковая панель с категориями -->
+            <aside class="sidebar">
+                <h3>Категории</h3>
+                <div id="categories-sidebar" class="categories-list">
+                    <!-- Категории будут загружены динамически -->
+                </div>
+            </aside>
+
+            <!-- Товары -->
+            <section class="products-section">
+                <div class="products-header">
+                    <h2 id="products-title">Все товары</h2>
+                    <div class="products-count">
+                        <span id="products-count">0 товаров</span>
+                    </div>
+                </div>
+                
+                <div id="products-grid" class="products-grid">
+                    <!-- Товары будут загружены динамически -->
+                </div>
+                
+                <!-- Индикатор загрузки -->
+                <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Загрузка товаров...</p>
+                </div>
+                
+                <!-- Сообщение об отсутствии товаров -->
+                <div id="no-products" class="no-products" style="display: none;">
+                    <p>Товары не найдены</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Модальное окно товара -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content product-modal-content">
+            <span class="close-btn">&times;</span>
+            <div class="product-modal-body">
+                <div class="product-image-section">
+                    <img id="modal-product-image" src="" alt="Product Image" class="modal-product-image">
+                </div>
+                <div class="product-info-section">
+                    <h2 id="modal-product-name"></h2>
+                    <div class="product-meta">
+                        <span id="modal-product-game" class="product-game"></span>
+                        <span id="modal-product-category" class="product-category"></span>
+                    </div>
+                    <div class="product-price-section">
+                        <span id="modal-product-price" class="product-price"></span>
+                        <span class="currency">₽</span>
+                    </div>
+                    <div class="product-description">
+                        <h3>Описание</h3>
+                        <p id="modal-product-description"></p>
+                    </div>
+                    <div class="product-actions">
+                        <button id="buy-product-btn" class="buy-btn">Купить</button>
+                        <button id="add-to-cart-btn" class="add-to-cart-btn">В корзину</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно корзины -->
+    <div id="cart-modal" class="modal">
+        <div class="modal-content cart-modal-content">
+            <span class="close-btn">&times;</span>
+            <h2>Корзина</h2>
+            <div id="cart-items" class="cart-items">
+                <!-- Товары в корзине -->
+            </div>
+            <div class="cart-total">
+                <div class="total-row">
+                    <span>Итого:</span>
+                    <span id="cart-total-price">0 ₽</span>
+                </div>
+            </div>
+            <div class="cart-actions">
+                <button id="clear-cart-btn" class="clear-cart-btn">Очистить корзину</button>
+                <button id="checkout-btn" class="checkout-btn">Оформить заказ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Кнопка корзины -->
+    <div id="cart-button" class="cart-button">
+        <span class="cart-icon">🛒</span>
+        <span id="cart-count" class="cart-count">0</span>
+    </div>
+
+    <footer id="footer">
+        <div class="footer-content">
+            <div class="left-section">
+                <p><a href="#">Политика конфиденциальности</a></p>
+                <p><a href="#">Пользовательское соглашение</a></p>
+            </div>
+
+            <div class="unicode">
+                <p>&copy; 2022–2025 Demonic Project</p>
+            </div>
+            
+            <div class="social-icons">
+                <a href="https://vk.com" target="_blank">
+                    <img src="/img/icon-vk.svg" alt="VK" class="social-icon">
+                </a>
+                <a href="https://discord.com" target="_blank">
+                    <img src="/img/icon-discord.svg" alt="Discord" class="social-icon">
+                </a>
+                <a href="https://youtube.com" target="_blank">
+                    <img src="/img/Icon-youtube.svg" alt="YouTube" class="social-icon">
+                </a>
+                <a href="https://t.me" target="_blank">
+                    <img src="/img/icon-telegram.svg" alt="Telegram" class="social-icon">
+                </a>
+            </div>
+
+            <div class="right-section">
+                <p><a href="#">Служба поддержки</a></p>
+                <p><a href="#">Часто задаваемые вопросы</a></p>
+                <p><a href="#">Заявки на модераторов</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/store.js"></script>
+</body>
+</html>

@@ -63,21 +63,39 @@ header {
 .profile-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   padding: 0 20px;
   margin-inline: -20px;
 }
 
-.profile-name {
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  text-decoration: none;
-  transition: 0.3s;
+.user-balance {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #2a2a2a;
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid #444;
 }
 
-.profile-name:hover {
-  color: #FF0B0B;
+.balance-amount {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.balance-currency {
+  color: #888;
+  font-size: 14px;
+}
+
+.profile-avatar-link {
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.profile-avatar-link:hover {
+  transform: scale(1.1);
 }
 
 .profile-avatar {
@@ -85,6 +103,12 @@ header {
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #444;
+  transition: border-color 0.3s ease;
+}
+
+.profile-avatar-link:hover .profile-avatar {
+  border-color: #FF0B0B;
 }
 
 .menu-btn {

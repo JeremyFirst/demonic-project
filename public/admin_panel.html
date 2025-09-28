@@ -37,6 +37,9 @@
         <div id="products-section" class="editor-container">
             <div class="editor-header">Редактор товаров</div>
             <div class="editor-buttons">
+                <div class="search-container">
+                    <input type="text" id="product-search" placeholder="Поиск товаров..." class="search-input">
+                </div>
                 <button id="add-product">Добавить новый товар</button> 
             </div>
             <div id="product-list" class="editor-items">
@@ -48,10 +51,66 @@
         <div id="categories-section" class="editor-container" style="display: none;">
             <div class="editor-header">Управление категориями</div>
             <div class="editor-buttons">
+                <div class="search-container">
+                    <input type="text" id="category-search" placeholder="Поиск категорий..." class="search-input">
+                </div>
                 <button id="add-category">Добавить новую категорию</button> 
             </div>
             <div id="category-list" class="editor-items">
                 <!-- Категории будут отображаться здесь -->
+            </div>
+        </div>
+
+        <!-- Контейнер для управления скидками -->
+        <div id="discounts-section" class="editor-container" style="display: none;">
+            <div class="editor-header">Управление скидками</div>
+            <div class="editor-buttons">
+                <div class="search-container">
+                    <input type="text" id="discount-search" placeholder="Поиск скидок..." class="search-input">
+                </div>
+                <button id="add-discount">Добавить новую скидку</button> 
+            </div>
+            <div id="discount-list" class="editor-items">
+                <!-- Скидки будут отображаться здесь -->
+            </div>
+        </div>
+
+        <!-- Контейнер для управления промокодами -->
+        <div id="promocodes-section" class="editor-container" style="display: none;">
+            <div class="editor-header">Управление промокодами</div>
+            <div class="editor-buttons">
+                <div class="search-container">
+                    <input type="text" id="promocode-search" placeholder="Поиск промокодов..." class="search-input">
+                </div>
+                <button id="add-promocode">Добавить новый промокод</button> 
+            </div>
+            <div id="promocode-list" class="editor-items">
+                <!-- Промокоды будут отображаться здесь -->
+            </div>
+        </div>
+
+        <!-- Секция сортировки товаров -->
+        <div id="sorting-section" class="editor-container" style="display: none;">
+            <div class="editor-header">Сортировка товаров</div>
+            <div class="editor-buttons">
+                <div class="search-container">
+                    <select id="sorting-game-select" required>
+                        <option value="">Выберите игру</option>
+                    </select>
+                </div>
+                <button id="load-products-for-sorting" style="display: none;">Загрузить товары</button>
+            </div>
+
+            <!-- Область для перетаскивания товаров -->
+            <div id="sorting-products-area" style="display: none;">
+                <h3>Перетащите товары для изменения порядка</h3>
+                <div id="sortable-products-list" class="sortable-list">
+                    <!-- Товары будут загружены здесь -->
+                </div>
+                <div class="form-actions">
+                    <button id="reset-sorting-btn">Сбросить</button>
+                    <button id="save-sorting-btn">Сохранить порядок</button>
+                </div>
             </div>
         </div>
 
@@ -61,6 +120,9 @@
     <div id="admins-section" class="editor-container" style="display: none;">
         <div class="editor-header">Управление администраторами</div>
         <div class="editor-buttons">
+            <div class="search-container">
+                <input type="text" id="admin-search" placeholder="Поиск администраторов..." class="search-input">
+            </div>
             <button id="add-admin">Добавить администратора</button> 
         </div>
         <div id="admin-list" class="editor-items">
@@ -201,10 +263,12 @@
             <input id="admin-id" type="hidden">
 
             <div class="form-group">
-                <label for="admin-user-select">Выберите пользователя:</label>
-                <select id="admin-user-select">
-                    <option value="">Загрузка пользователей...</option>
-                </select>
+                <label for="admin-user-search">Выберите пользователя:</label>
+                <div class="search-select-container">
+                    <input type="text" id="admin-user-search" placeholder="Поиск по имени или SteamID..." autocomplete="off">
+                    <div id="user-search-results" class="search-results"></div>
+                    <input type="hidden" id="admin-user-select" value="">
+                </div>
             </div>
 
             <div class="form-group">
@@ -223,6 +287,194 @@
     </div>
 </div>
 
+<!-- Модальное окно для добавления/редактирования скидки -->
+<div id="discount-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn-discount">&times;</span>
+        <h2 id="discount-modal-title">Добавить скидку</h2>
+        <form id="discount-form">
+            <input id="discount-id" type="hidden">
+
+            <!-- Левая колонка: Основная информация -->
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                
+                <div class="form-group">
+                    <label for="discount-name">Название скидки:</label>
+                    <input type="text" id="discount-name" name="discount-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="discount-description">Описание:</label>
+                    <textarea id="discount-description" name="discount-description" placeholder="Описание скидки..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount-type">Тип скидки:</label>
+                    <select id="discount-type">
+                        <option value="percentage">Процентная скидка (%)</option>
+                        <option value="fixed">Фиксированная скидка (₽)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount-value">Размер скидки:</label>
+                    <input type="number" id="discount-value" name="discount-value" min="0" step="0.01" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount-status">Статус:</label>
+                    <select id="discount-status">
+                        <option value="active">Активна</option>
+                        <option value="inactive">Неактивна</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Правая колонка: Период и применение -->
+            <div class="form-section">
+                <h3>Период и применение</h3>
+                
+                <div class="form-group">
+                    <label for="discount-start-date">Дата начала:</label>
+                    <input type="datetime-local" id="discount-start-date" name="discount-start-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount-end-date">Дата окончания:</label>
+                    <input type="datetime-local" id="discount-end-date" name="discount-end-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="discount-target">Применяется к:</label>
+                    <select id="discount-target">
+                        <option value="all">Все товары</option>
+                        <option value="game">Все товары игры</option>
+                        <option value="category">Конкретная категория</option>
+                        <option value="product">Конкретный товар</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="game-target-group" style="display: none;">
+                    <label for="discount-game-select">Выберите игру:</label>
+                    <select id="discount-game-select">
+                        <option value="">Загрузка игр...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="category-target-group" style="display: none;">
+                    <label for="discount-category-select">Выберите категорию:</label>
+                    <select id="discount-category-select">
+                        <option value="">Загрузка категорий...</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="product-target-group" style="display: none;">
+                    <label for="discount-product-select">Выберите товар:</label>
+                    <select id="discount-product-select">
+                        <option value="">Загрузка товаров...</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Кнопки действий на всю ширину -->
+            <div class="form-actions" style="grid-column: 1 / -1; margin-top: 20px;">
+                <button type="button" id="delete-discount-btn" style="display: none;">Удалить скидку</button>
+                <button type="submit" id="save-discount-btn">Создать скидку</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для промокодов -->
+<div id="promocode-modal" class="modal">
+    <div class="modal-content">
+        <span class="close-btn close-btn-promocode">&times;</span>
+        <h2 id="promocode-modal-title">Добавить новый промокод</h2>
+        <form id="promocode-form">
+            <input id="promocode-id" type="hidden">
+            
+            <div class="form-section">
+                <h3>Основная информация</h3>
+                <div class="form-group">
+                    <label for="promocode-code">Код промокода:</label>
+                    <input type="text" id="promocode-code" required>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-description">Описание:</label>
+                    <textarea id="promocode-description" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-type">Тип скидки:</label>
+                    <select id="promocode-type" required>
+                        <option value="percentage">Процентная скидка</option>
+                        <option value="fixed">Фиксированная скидка</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-value">Размер скидки:</label>
+                    <input type="number" id="promocode-value" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-status">Статус:</label>
+                    <select id="promocode-status">
+                        <option value="active">Активен</option>
+                        <option value="inactive">Неактивен</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>Период и применение</h3>
+                <div class="form-group">
+                    <label for="promocode-start-date">Дата начала:</label>
+                    <input type="datetime-local" id="promocode-start-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-end-date">Дата окончания:</label>
+                    <input type="datetime-local" id="promocode-end-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-target">Применяется к:</label>
+                    <select id="promocode-target" required>
+                        <option value="all">Все товары</option>
+                        <option value="game">Игре</option>
+                        <option value="category">Категории</option>
+                        <option value="product">Конкретному товару</option>
+                    </select>
+                </div>
+                <div id="promocode-game-group" class="form-group" style="display: none;">
+                    <label for="promocode-game-select">Выберите игру:</label>
+                    <select id="promocode-game-select">
+                        <option value="">Выберите игру</option>
+                    </select>
+                </div>
+                <div id="promocode-category-group" class="form-group" style="display: none;">
+                    <label for="promocode-category-select">Выберите категорию:</label>
+                    <select id="promocode-category-select">
+                        <option value="">Выберите категорию</option>
+                    </select>
+                </div>
+                <div id="promocode-product-group" class="form-group" style="display: none;">
+                    <label for="promocode-product-select">Выберите товар:</label>
+                    <select id="promocode-product-select">
+                        <option value="">Выберите товар</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="promocode-usage-limit">Лимит использований:</label>
+                    <input type="number" id="promocode-usage-limit" min="0" placeholder="0 = без ограничений">
+                </div>
+            </div>
+            
+            <div class="form-actions" style="grid-column: 1 / -1; margin-top: 20px;">
+                <button type="button" id="delete-promocode-btn" style="display: none;">Удалить промокод</button>
+                <button type="submit" id="save-promocode-btn">Создать промокод</button>
+            </div>
+        </form>
+    </div>
+
+</div>
 
 <footer id="footer">
     <p>&copy; 2022–2025 Demonic Project</p>

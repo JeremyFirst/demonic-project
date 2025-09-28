@@ -101,11 +101,15 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Отображаем никнейм на странице
+            // Отображаем профиль пользователя на странице
             document.querySelector(".profile-info").style.display = "flex";
-            document.querySelector(".profile-name").textContent = user.username;
-            document.querySelector(".profile-name").href = "/profile.html";
             document.querySelector("#auth-btn").style.display = "none"; // Скрыть кнопку "Авторизация"
+            
+            // Обновляем баланс пользователя
+            const balanceAmount = document.querySelector('.balance-amount');
+            if (balanceAmount) {
+                balanceAmount.textContent = user.balance || '0';
+            }
 
             // Загружаем аватар через промежуточный сервер, сначала проверим куки
             const avatarCookie = getCookie(`avatar-${steamId}`);

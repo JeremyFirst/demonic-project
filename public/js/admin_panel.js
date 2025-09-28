@@ -1,3 +1,14 @@
+// Глобальные переменные для поиска
+let allDiscounts = [];
+let allProducts = [];
+let allCategories = [];
+let allAdmins = [];
+let allPromocodes = [];
+let allGames = [];
+
+// Глобальные DOM элементы
+let promocodesSection;
+
 document.addEventListener("DOMContentLoaded", function () {
     // Проверка авторизации
     fetch("/profile")
@@ -9,7 +20,6 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(user => {
             if (user && user.role === 'admin') {
-                console.log("Пользователь авторизован:", user);
                 // Показываем приветствие
                 document.title = `Админ панель - ${user.username}`;
                 
@@ -43,10 +53,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const changeImageBtn = document.getElementById("change-image-btn");
     const editProductImage = document.getElementById("edit-product-image");
     const imageInput = document.getElementById("edit-product-image-upload");
-    const editProductBtn = document.getElementById("edit-product-btn");  // Кнопка редактирования товара
+    const editProductBtn = document.getElementById("edit-product-btn");
     const deleteProductBtn = document.getElementById("delete-product-btn"); 
 
-    let productImage = null;
 
     productModal.classList.remove("show");
     document.getElementById("edit-product-modal").classList.remove("show");
@@ -60,7 +69,6 @@ document.addEventListener("DOMContentLoaded", function () {
             productItem.innerHTML = `
                 <img src="${product.image_url}" alt="${product.name}" class="product-image">
                 <h5 class="product-name">${product.name}</h5>
-                <p class="product-description">${product.description}</p>
                 <p class="product-price">${product.price} ₽</p>
             `;
             productItem.addEventListener("click", () => {
@@ -70,35 +78,61 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Функция поиска товаров (только по названию)
+    function searchProducts(searchTerm) {
+        if (!searchTerm.trim()) {
+            displayProducts(allProducts);
+            return;
+        }
+
+        const filtered = allProducts.filter(product => {
+            const name = product.name.toLowerCase();
+            const search = searchTerm.toLowerCase();
+            
+            return name.includes(search);
+        });
+
+        displayProducts(filtered);
+    }
+
     addProductBtn.addEventListener("click", function () {
         if (document.getElementById("edit-product-modal").classList.contains("show")) return;
 
         productModal.classList.add("show");
         document.getElementById("edit-product-id").value = "";
-        productImage = null;
         fileNameDisplay.textContent = "Файл не выбран";
         productNameInput.value = "";
         productPriceInput.value = "";
         document.getElementById("product-description").value = "";
         productImageInput.value = "";
-        previewSection.classList.remove("show");
-        productPreview.innerHTML = "";
+        // Полный сброс состояния предпросмотра
+        hidePreview();
     });
 
     closeModalBtnAdd.addEventListener("click", function () {
         productModal.classList.remove("show");
         productModal.style.width = "400px";
+        // Сбрасываем состояние предпросмотра
+        hidePreview();
     });
 
     closeModalBtnEdit.addEventListener("click", function () {
         document.getElementById("edit-product-modal").classList.remove("show");
     });
 
+    // Общий обработчик Escape для всех модальных окон
     document.addEventListener("keydown", function (event) {
         if (event.key === "Escape") {
-            productModal.classList.remove("show");
-            productModal.style.width = "400px";
+            if (productModal.classList.contains("show")) {
+                productModal.classList.remove("show");
+                productModal.style.width = "400px";
+                hidePreview(); // Сбрасываем предпросмотр при закрытии модального окна товара
+            }
             document.getElementById("edit-product-modal").classList.remove("show");
+            categoryModal.classList.remove("show");
+            discountModal.classList.remove("show");
+            adminModal.classList.remove("show");
+            promocodeModal.classList.remove("show");
         }
     });
 
@@ -118,11 +152,10 @@ document.addEventListener("DOMContentLoaded", function () {
     function showPreview() {
         const name = productNameInput.value;
         const price = productPriceInput.value;
-        const description = document.getElementById("product-description").value;
         const imageFile = productImageInput.files[0];
     
-        if (!name || !price || !description || !imageFile) {
-            alert("Заполните все поля и загрузите изображение для предпросмотра.");
+        if (!name || !price || !imageFile) {
+            alert("Заполните название, цену и загрузите изображение для предпросмотра.");
             return;
         }
     
@@ -139,7 +172,6 @@ document.addEventListener("DOMContentLoaded", function () {
             productPreview.innerHTML = `
                 <img src="${e.target.result}" alt="${name}">
                 <p><strong>${name}</strong></p>
-                <p class="description">${description}</p>
                 <p><strong>Цена: ${price} ₽</strong></p>
             `;
         };
@@ -212,97 +244,88 @@ document.addEventListener("DOMContentLoaded", function () {
                 alert(response.message);
                 fetchProducts();
                 productModal.classList.remove("show");
+                // Сбрасываем состояние предпросмотра
+                hidePreview();
             })
             .catch(error => console.error('Ошибка при добавлении товара:', error));
     });
 
     function openEditProductModal(product) {
-        // Заполняем поля модального окна данными товара
-        document.getElementById("edit-product-id").value = product.id;  // ID товара
-        document.getElementById("edit-product-name").value = product.name;  // Название товара
-        document.getElementById("edit-product-price").value = product.price;  // Цена товара
-        document.getElementById("edit-product-description").value = product.description;  // Описание товара
+        document.getElementById("edit-product-id").value = product.id;
+        document.getElementById("edit-product-name").value = product.name;
+        document.getElementById("edit-product-price").value = product.price;
+        document.getElementById("edit-product-description").value = product.description;
     
-        // Если изображение товара есть, показываем его
         const editProductImage = document.getElementById("edit-product-image");
-        editProductImage.src = product.image_url;  // Устанавливаем URL изображения
-        editProductImage.style.display = "block";  // Показываем изображение
+        editProductImage.src = product.image_url;
+        editProductImage.style.display = "block";
     
-        // Заполняем поля с игрой и категорией
         const editGameSelect = document.getElementById("edit-game-select");
         const editCategorySelect = document.getElementById("edit-category-select");
         
-        editGameSelect.value = product.game_id;  // Игра
+        editGameSelect.value = product.game_id;
         
-        // Загружаем категории для выбранной игры
+        // Сбрасываем imageUrl при открытии модального окна
+        window.imageUrl = null;
+        
         loadCategoriesForEditGame(product.game_id, product.category_id);
     
-        // Открываем модальное окно редактирования
-        document.getElementById("edit-product-modal").classList.add("show");  // Показываем модальное окно редактирования
+        document.getElementById("edit-product-modal").classList.add("show");
     }
 
     changeImageBtn.addEventListener("click", function () {
-        imageInput.click();  // Открываем диалог выбора файла
+        imageInput.click();
     });
     
-    // Когда пользователь выбирает изображение
     imageInput.addEventListener("change", function (event) {
-        const file = event.target.files[0];  // Получаем выбранный файл
+        const file = event.target.files[0];
     
         if (file) {
-            const reader = new FileReader();  // Создаем новый FileReader
+            const reader = new FileReader();
     
             reader.onload = function (e) {
-                // Устанавливаем новое изображение в элемент <img>
                 editProductImage.src = e.target.result;
-                editProductImage.style.display = "block";  // Показываем изображение
+                editProductImage.style.display = "block";
     
-                // Сохраняем URL изображения в переменную
-                imageUrl = e.target.result;  // Это будет URL изображения
+                window.imageUrl = e.target.result;
             };
     
-            reader.readAsDataURL(file);  // Читаем файл как Data URL
+            reader.readAsDataURL(file);
         }
     });
 
     editProductBtn.onclick = function () {
-        // Получаем данные из формы
-        const productId = document.getElementById("edit-product-id").value;  // ID товара
-        const productName = document.getElementById("edit-product-name").value;  // Название товара
-        const productPrice = document.getElementById("edit-product-price").value;  // Цена товара
-        const productDescription = document.getElementById("edit-product-description").value;  // Описание товара
-        const productImage = document.getElementById("edit-product-image").src;  // Изображение товара
-        const gameId = document.getElementById("edit-game-select").value;  // Игра
-        const categoryId = document.getElementById("edit-category-select").value;  // Категория товара
+        const productId = document.getElementById("edit-product-id").value;
+        const productName = document.getElementById("edit-product-name").value;
+        const productPrice = document.getElementById("edit-product-price").value;
+        const productDescription = document.getElementById("edit-product-description").value;
+        const productImage = document.getElementById("edit-product-image").src;
+        const gameId = document.getElementById("edit-game-select").value;
+        const categoryId = document.getElementById("edit-category-select").value;
     
-        // Создаем объект с новыми данными товара
         const updatedProduct = {
             name: productName,
             price: productPrice,
             description: productDescription,
-            image_url: productImage,
+            image_url: window.imageUrl || productImage,
             game_id: gameId,
-            category_id: categoryId,
-            image_url: imageUrl  
+            category_id: categoryId
         };
     
-        console.log("Отправка PUT-запроса на редактирование товара с данными:", updatedProduct);
     
-        // Отправляем PUT-запрос для обновления товара
         fetch(`/edit-product/${productId}`, {
-            method: 'PUT',  // Метод PUT для обновления
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(updatedProduct)  // Отправляем обновленные данные
+            body: JSON.stringify(updatedProduct)
         })
         .then(response => response.json())
         .then(data => {
-            console.log("Ответ от сервера:", data);  // Логируем ответ от сервера
             if (data.message === 'Товар обновлен!') {
                 alert('Товар успешно обновлен');
-                fetchProducts(); // Обновляем список товаров
-                document.getElementById("edit-product-modal").classList.remove("show"); // Закрываем окно редактирования
+                fetchProducts();
+                document.getElementById("edit-product-modal").classList.remove("show");
             } else {
                 alert('Ошибка при обновлении товара');
             }
@@ -311,21 +334,18 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     deleteProductBtn.onclick = function () {
-        const productId = document.getElementById("edit-product-id").value;  // Получаем ID товара
+        const productId = document.getElementById("edit-product-id").value;
     
-        console.log(`Отправка DELETE-запроса для удаления товара с ID: ${productId}`);
     
-        // Отправляем DELETE-запрос для удаления товара
         fetch(`/delete-product/${productId}`, {
-            method: 'DELETE',  // Метод DELETE
+            method: 'DELETE',
         })
         .then(response => response.json())
         .then(data => {
-            console.log("Ответ от сервера при удалении:", data);  // Логируем ответ от сервера
             if (data.message === 'Товар удален') {
                 alert('Товар успешно удален');
-                fetchProducts(); // Обновляем список товаров
-                document.getElementById("edit-product-modal").classList.remove("show"); // Закрываем окно
+                fetchProducts();
+                document.getElementById("edit-product-modal").classList.remove("show");
             } else {
                 alert('Ошибка при удалении товара');
             }
@@ -334,17 +354,31 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     
     fetchProducts();
+    fetchGames();
     
-    // Загружаем категории для первой игры
     loadCategoriesForGame(gameSelect.value);
 
     function fetchProducts() {
         fetch('/get-products')
             .then(response => response.json())
             .then(products => {
+                allProducts = products; // Сохраняем все товары для поиска
                 displayProducts(products);
             })
             .catch(error => console.error('Ошибка при получении товаров:', error));
+    }
+
+    function fetchGames() {
+        return fetch('/get-games')
+            .then(response => response.json())
+            .then(games => {
+                allGames = games; // Сохраняем все игры для использования в других функциях
+                return games;
+            })
+            .catch(error => {
+                console.error('Ошибка при получении игр:', error);
+                throw error;
+            });
     }
 
     // Функция для загрузки категорий по игре
@@ -438,7 +472,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const categoryList = document.getElementById("category-list");
     const productsSection = document.getElementById("products-section");
     const categoriesSection = document.getElementById("categories-section");
+    const discountsSection = document.getElementById("discounts-section");
     const adminsSection = document.getElementById("admins-section");
+    const sortingSection = document.getElementById("sorting-section");
+
+    // Инициализируем promocodesSection после объявления других секций
+    promocodesSection = document.getElementById("promocodes-section");
+
+    // Восстанавливаем состояние после инициализации всех секций
+    restoreSectionState();
 
     // Переключение между разделами
     addCategoryBtn.addEventListener("click", function() {
@@ -453,6 +495,9 @@ document.addEventListener("DOMContentLoaded", function () {
     // Функции для переключения разделов
     function showCategoriesSection() {
         productsSection.style.display = "none";
+        discountsSection.style.display = "none";
+        if (promocodesSection) promocodesSection.style.display = "none";
+        sortingSection.style.display = "none";
         categoriesSection.style.display = "block";
         fetchCategories();
         // Показываем боковое меню для раздела категорий
@@ -467,6 +512,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function showProductsSection() {
         categoriesSection.style.display = "none";
+        discountsSection.style.display = "none";
+        if (promocodesSection) promocodesSection.style.display = "none";
+        sortingSection.style.display = "none";
         productsSection.style.display = "block";
         // Показываем боковое меню для раздела товаров
         document.querySelector('.sidebar').style.display = "block";
@@ -483,13 +531,16 @@ document.addEventListener("DOMContentLoaded", function () {
         const savedSection = localStorage.getItem('adminPanelSection');
         if (savedSection === 'categories') {
             showCategoriesSection();
+        } else if (savedSection === 'discounts') {
+            showDiscountsSection();
+        } else if (savedSection === 'promocodes') {
+            showPromocodesSection();
         } else {
             showProductsSection();
         }
     }
 
-    // Вызываем восстановление состояния при загрузке
-    restoreSectionState();
+    // restoreSectionState() будет вызвана после инициализации всех секций
 
     // ========== ФУНКЦИОНАЛ НАВИГАЦИИ ==========
 
@@ -509,7 +560,6 @@ document.addEventListener("DOMContentLoaded", function () {
     if (adminsNav) {
         adminsNav.addEventListener("click", function(event) {
             event.preventDefault();
-            console.log("Клик по кнопке Администраторы");
             
             // Убираем активный класс со всех кнопок навигации
             document.querySelectorAll('.navbar a').forEach(link => {
@@ -528,7 +578,6 @@ document.addEventListener("DOMContentLoaded", function () {
             // Показываем раздел администраторов
             if (adminsSection) {
                 adminsSection.style.display = "block";
-                console.log("Показываем секцию администраторов");
             } else {
                 console.error("Секция администраторов не найдена");
             }
@@ -561,8 +610,8 @@ document.addEventListener("DOMContentLoaded", function () {
         // Скрываем раздел администраторов
         adminsSection.style.display = "none";
         
-        // Показываем раздел товаров
-        productsSection.style.display = "block";
+        // Восстанавливаем состояние раздела магазина (товары, категории или скидки)
+        restoreSectionState();
     });
 
     // Открытие модального окна для добавления категории
@@ -582,12 +631,6 @@ document.addEventListener("DOMContentLoaded", function () {
         categoryModal.classList.remove("show");
     });
 
-    // Закрытие по Escape
-    document.addEventListener("keydown", function(event) {
-        if (event.key === "Escape") {
-            categoryModal.classList.remove("show");
-        }
-    });
 
     // Предотвращение стандартной отправки формы
     categoryForm.addEventListener("submit", function(event) {
@@ -728,6 +771,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Функция поиска категорий (только по названию)
+    function searchCategories(searchTerm) {
+        if (!searchTerm.trim()) {
+            displayCategories(allCategories);
+            return;
+        }
+
+        const filtered = allCategories.filter(category => {
+            const name = category.name.toLowerCase();
+            const search = searchTerm.toLowerCase();
+            
+            return name.includes(search);
+        });
+
+        displayCategories(filtered);
+    }
+
     // Функция для открытия модального окна редактирования категории
     function openEditCategoryModal(category) {
         document.getElementById("category-modal-title").textContent = "Редактировать категорию";
@@ -746,11 +806,841 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/get-categories')
             .then(response => response.json())
             .then(categories => {
+                allCategories = categories; // Сохраняем все категории для поиска
                 displayCategories(categories);
             })
             .catch(error => {
                 console.error('Ошибка при получении категорий:', error);
                 categoryList.innerHTML = '<p>Ошибка при загрузке категорий</p>';
+            });
+    }
+
+    // ========== ФУНКЦИОНАЛ СКИДОК ==========
+
+    // Элементы для работы со скидками
+    const addDiscountBtn = document.getElementById("add-discount-btn");
+    const addDiscountModalBtn = document.getElementById("add-discount");
+    const discountModal = document.getElementById("discount-modal");
+    const closeDiscountModalBtn = document.querySelector(".close-btn-discount");
+    const discountForm = document.getElementById("discount-form");
+    const saveDiscountBtn = document.getElementById("save-discount-btn");
+    const deleteDiscountBtn = document.getElementById("delete-discount-btn");
+    const discountList = document.getElementById("discount-list");
+
+    // Элементы для работы с промокодами
+    const addPromocodeBtn = document.getElementById("add-promo-btn");
+    const addPromocodeModalBtn = document.getElementById("add-promocode");
+    const promocodeModal = document.getElementById("promocode-modal");
+    const closePromocodeModalBtn = document.querySelector(".close-btn-promocode");
+    const promocodeForm = document.getElementById("promocode-form");
+    const savePromocodeBtn = document.getElementById("save-promocode-btn");
+    const deletePromocodeBtn = document.getElementById("delete-promocode-btn");
+    const promocodeList = document.getElementById("promocode-list");
+
+    // Переключение на раздел скидок
+    addDiscountBtn.addEventListener("click", function() {
+        showDiscountsSection();
+    });
+
+    // Переключение на раздел промокодов
+    addPromocodeBtn.addEventListener("click", function() {
+        showPromocodesSection();
+    });
+
+    // Функция для показа раздела скидок
+    function showDiscountsSection() {
+        productsSection.style.display = "none";
+        categoriesSection.style.display = "none";
+        if (promocodesSection) promocodesSection.style.display = "none";
+        sortingSection.style.display = "none";
+        discountsSection.style.display = "block";
+        fetchDiscounts();
+        // Показываем боковое меню
+        document.querySelector('.sidebar').style.display = "block";
+        // Показываем родительский контейнер
+        document.getElementById('content-area').style.display = "block";
+        // Скрываем раздел администраторов
+        adminsSection.style.display = "none";
+        // Сохраняем состояние в localStorage
+        localStorage.setItem('adminPanelSection', 'discounts');
+    }
+
+    // Функция для показа раздела промокодов
+    function showPromocodesSection() {
+        productsSection.style.display = "none";
+        categoriesSection.style.display = "none";
+        discountsSection.style.display = "none";
+        sortingSection.style.display = "none";
+        if (promocodesSection) promocodesSection.style.display = "block";
+        adminsSection.style.display = "none";
+        fetchPromocodes();
+        // Показываем боковое меню
+        document.querySelector('.sidebar').style.display = "block";
+        // Показываем родительский контейнер
+        document.getElementById('content-area').style.display = "block";
+        localStorage.setItem('adminPanelSection', 'promocodes');
+    }
+
+    // Открытие модального окна для добавления скидки
+    addDiscountModalBtn.addEventListener("click", function() {
+        discountModal.classList.add("show");
+        document.getElementById("discount-modal-title").textContent = "Добавить скидку";
+        document.getElementById("discount-id").value = "";
+        document.getElementById("discount-name").value = "";
+        document.getElementById("discount-description").value = "";
+        document.getElementById("discount-type").value = "percentage";
+        document.getElementById("discount-value").value = "";
+        document.getElementById("discount-start-date").value = "";
+        document.getElementById("discount-end-date").value = "";
+        document.getElementById("discount-target").value = "all";
+        document.getElementById("discount-status").value = "active";
+        deleteDiscountBtn.style.display = "none";
+        saveDiscountBtn.textContent = "Создать скидку";
+        
+        // Скрываем дополнительные поля
+        document.getElementById("game-target-group").style.display = "none";
+        document.getElementById("category-target-group").style.display = "none";
+        document.getElementById("product-target-group").style.display = "none";
+        
+        // Загружаем данные для селекторов
+        loadGamesForDiscount();
+        loadCategoriesForDiscount();
+        loadProductsForDiscount();
+    });
+
+    // Закрытие модального окна скидки
+    closeDiscountModalBtn.addEventListener("click", function() {
+        discountModal.classList.remove("show");
+    });
+
+    // Предотвращение стандартной отправки формы
+    discountForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        saveDiscount();
+    });
+
+    // Обработчик изменения типа цели скидки
+    document.getElementById("discount-target").addEventListener("change", function() {
+        const targetType = this.value;
+        const gameGroup = document.getElementById("game-target-group");
+        const categoryGroup = document.getElementById("category-target-group");
+        const productGroup = document.getElementById("product-target-group");
+        
+        gameGroup.style.display = targetType === "game" ? "block" : "none";
+        categoryGroup.style.display = targetType === "category" ? "block" : "none";
+        productGroup.style.display = targetType === "product" ? "block" : "none";
+    });
+
+    // Обработчик поиска скидок
+    document.getElementById("discount-search").addEventListener("input", function() {
+        searchDiscounts(this.value);
+    });
+
+    // Обработчик поиска товаров
+    document.getElementById("product-search").addEventListener("input", function() {
+        searchProducts(this.value);
+    });
+
+    // Обработчик поиска категорий
+    document.getElementById("category-search").addEventListener("input", function() {
+        searchCategories(this.value);
+    });
+
+    // Обработчик поиска администраторов
+    document.getElementById("admin-search").addEventListener("input", function() {
+        searchAdmins(this.value);
+    });
+
+    // ========== ФУНКЦИОНАЛ ПРОМОКОДОВ ==========
+
+    // Открытие модального окна для добавления промокода
+    addPromocodeModalBtn.addEventListener("click", function() {
+        promocodeModal.classList.add("show");
+        document.getElementById("promocode-modal-title").textContent = "Добавить промокод";
+        document.getElementById("promocode-id").value = "";
+        document.getElementById("promocode-code").value = "";
+        document.getElementById("promocode-description").value = "";
+        document.getElementById("promocode-type").value = "percentage";
+        document.getElementById("promocode-value").value = "";
+        document.getElementById("promocode-start-date").value = "";
+        document.getElementById("promocode-end-date").value = "";
+        document.getElementById("promocode-target").value = "all";
+        document.getElementById("promocode-usage-limit").value = "";
+        document.getElementById("promocode-status").value = "active";
+        deletePromocodeBtn.style.display = "none";
+        savePromocodeBtn.textContent = "Создать промокод";
+        
+        // Скрываем дополнительные поля
+        document.getElementById("promocode-game-group").style.display = "none";
+        document.getElementById("promocode-category-group").style.display = "none";
+        document.getElementById("promocode-product-group").style.display = "none";
+        
+        // Загружаем данные для селекторов
+        loadGamesForPromocode();
+        loadCategoriesForPromocode();
+        loadProductsForPromocode();
+    });
+
+    // Закрытие модального окна промокода
+    closePromocodeModalBtn.addEventListener("click", function() {
+        promocodeModal.classList.remove("show");
+    });
+
+    // Предотвращение стандартной отправки формы промокода
+    promocodeForm.addEventListener("submit", function(event) {
+        event.preventDefault();
+        savePromocode();
+    });
+
+    // Обработчик изменения типа цели промокода
+    document.getElementById("promocode-target").addEventListener("change", function() {
+        const targetType = this.value;
+        const gameGroup = document.getElementById("promocode-game-group");
+        const categoryGroup = document.getElementById("promocode-category-group");
+        const productGroup = document.getElementById("promocode-product-group");
+        
+        gameGroup.style.display = targetType === "game" ? "block" : "none";
+        categoryGroup.style.display = targetType === "category" ? "block" : "none";
+        productGroup.style.display = targetType === "product" ? "block" : "none";
+    });
+
+    // Обработчик поиска промокодов
+    document.getElementById("promocode-search").addEventListener("input", function() {
+        searchPromocodes(this.value);
+    });
+
+    // Сохранение промокода
+    function savePromocode() {
+        const promocodeId = document.getElementById("promocode-id").value;
+        const promocodeCode = document.getElementById("promocode-code").value;
+        const promocodeDescription = document.getElementById("promocode-description").value;
+        const promocodeType = document.getElementById("promocode-type").value;
+        const promocodeValue = document.getElementById("promocode-value").value;
+        const promocodeStartDate = document.getElementById("promocode-start-date").value;
+        const promocodeEndDate = document.getElementById("promocode-end-date").value;
+        const promocodeTarget = document.getElementById("promocode-target").value;
+        const promocodeUsageLimit = document.getElementById("promocode-usage-limit").value;
+        const promocodeStatus = document.getElementById("promocode-status").value;
+
+        // Валидация
+        if (!promocodeCode.trim()) {
+            alert('Введите код промокода');
+            return;
+        }
+        if (!promocodeValue || promocodeValue <= 0) {
+            alert('Введите корректный размер скидки');
+            return;
+        }
+        if (!promocodeStartDate || !promocodeEndDate) {
+            alert('Выберите даты начала и окончания');
+            return;
+        }
+        if (new Date(promocodeStartDate) >= new Date(promocodeEndDate)) {
+            alert('Дата начала должна быть раньше даты окончания');
+            return;
+        }
+
+        // Определяем target_id в зависимости от типа цели
+        let targetId = null;
+        if (promocodeTarget === 'game') {
+            targetId = document.getElementById("promocode-game-select").value;
+        } else if (promocodeTarget === 'category') {
+            targetId = document.getElementById("promocode-category-select").value;
+        } else if (promocodeTarget === 'product') {
+            targetId = document.getElementById("promocode-product-select").value;
+        }
+
+        const promocodeData = {
+            code: promocodeCode,
+            description: promocodeDescription,
+            type: promocodeType,
+            value: parseFloat(promocodeValue),
+            start_date: promocodeStartDate,
+            end_date: promocodeEndDate,
+            target_type: promocodeTarget,
+            target_id: targetId,
+            usage_limit: promocodeUsageLimit ? parseInt(promocodeUsageLimit) : null,
+            status: promocodeStatus
+        };
+
+        const url = promocodeId ? `/edit-promocode/${promocodeId}` : '/add-promocode';
+        const method = promocodeId ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(promocodeData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                promocodeModal.classList.remove("show");
+                fetchPromocodes();
+                alert(promocodeId ? 'Промокод обновлен' : 'Промокод создан');
+            } else {
+                alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при сохранении промокода:', error);
+            alert('Ошибка при сохранении промокода');
+        });
+    }
+
+    // Удаление промокода
+    deletePromocodeBtn.addEventListener("click", function() {
+        const promocodeId = document.getElementById("promocode-id").value;
+        
+        if (!promocodeId) {
+            alert('Промокод не выбран');
+            return;
+        }
+
+        if (confirm('Вы уверены, что хотите удалить этот промокод?')) {
+            fetch(`/delete-promocode/${promocodeId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    promocodeModal.classList.remove("show");
+                    fetchPromocodes();
+                    alert('Промокод удален');
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении промокода:', error);
+                alert('Ошибка при удалении промокода');
+            });
+        }
+    });
+
+    // Сохранение скидки
+    function saveDiscount() {
+        const discountId = document.getElementById("discount-id").value;
+        const discountName = document.getElementById("discount-name").value;
+        const discountDescription = document.getElementById("discount-description").value;
+        const discountType = document.getElementById("discount-type").value;
+        const discountValue = document.getElementById("discount-value").value;
+        const discountStartDate = document.getElementById("discount-start-date").value;
+        const discountEndDate = document.getElementById("discount-end-date").value;
+        const discountTarget = document.getElementById("discount-target").value;
+        const discountStatus = document.getElementById("discount-status").value;
+
+        if (!discountName.trim()) {
+            alert("Введите название скидки");
+            return;
+        }
+
+        if (!discountValue || discountValue <= 0) {
+            alert("Введите корректный размер скидки");
+            return;
+        }
+
+        if (!discountStartDate || !discountEndDate) {
+            alert("Выберите даты начала и окончания скидки");
+            return;
+        }
+
+        if (new Date(discountStartDate) >= new Date(discountEndDate)) {
+            alert("Дата окончания должна быть позже даты начала");
+            return;
+        }
+
+        const discountData = {
+            name: discountName,
+            description: discountDescription,
+            type: discountType,
+            value: parseFloat(discountValue),
+            start_date: discountStartDate,
+            end_date: discountEndDate,
+            target_type: discountTarget,
+            target_id: discountTarget === "game" ? document.getElementById("discount-game-select").value :
+                      discountTarget === "category" ? document.getElementById("discount-category-select").value : 
+                      discountTarget === "product" ? document.getElementById("discount-product-select").value : null,
+            status: discountStatus
+        };
+
+        if (discountId) {
+            // Редактирование существующей скидки
+            fetch(`/edit-discount/${discountId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(discountData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchDiscounts();
+                    discountModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при обновлении скидки');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при обновлении скидки:', error);
+                alert('Ошибка при обновлении скидки');
+            });
+        } else {
+            // Добавление новой скидки
+            fetch('/add-discount', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(discountData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchDiscounts();
+                    discountModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при добавлении скидки');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при добавлении скидки:', error);
+                alert('Ошибка при добавлении скидки');
+            });
+        }
+    }
+
+    // Обработчик для кнопки сохранения (для совместимости)
+    saveDiscountBtn.addEventListener("click", function(event) {
+        event.preventDefault();
+        saveDiscount();
+    });
+
+    // Удаление скидки
+    deleteDiscountBtn.addEventListener("click", function() {
+        const discountId = document.getElementById("discount-id").value;
+        
+        if (!discountId) return;
+
+        if (confirm("Вы уверены, что хотите удалить эту скидку?")) {
+            fetch(`/delete-discount/${discountId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.message) {
+                    alert(data.message);
+                    fetchDiscounts();
+                    discountModal.classList.remove("show");
+                } else {
+                    alert(data.error || 'Ошибка при удалении скидки');
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка при удалении скидки:', error);
+                alert('Ошибка при удалении скидки');
+            });
+        }
+    });
+
+    // Функция для отображения скидок
+    function displayDiscounts(discounts) {
+        discountList.innerHTML = '';
+        
+        if (discounts.length === 0) {
+            discountList.innerHTML = '<p>Скидки не найдены. Добавьте первую скидку!</p>';
+            return;
+        }
+
+        discounts.forEach(discount => {
+            const discountItem = document.createElement('div');
+            discountItem.classList.add('discount-item');
+            
+            const discountValue = discount.type === 'percentage' ? 
+                `${discount.value}%` : 
+                `${discount.value} ₽`;
+            
+            const targetText = discount.target_type === 'all' ? 'Все товары' :
+                             discount.target_type === 'game' ? `Игра: ${discount.game_name || 'Не указана'}` :
+                             discount.target_type === 'category' ? `Категория: ${discount.category_name || 'Не указана'}` :
+                             discount.target_type === 'product' ? `Товар: ${discount.product_name || 'Не указан'}` :
+                             'Не указано';
+            
+            const statusText = discount.status === 'active' ? 'Активна' : 'Неактивна';
+            const statusClass = discount.status === 'active' ? 'status-active' : 'status-inactive';
+            
+            discountItem.innerHTML = `
+                <div class="discount-info">
+                    <h4>${discount.name}</h4>
+                    <p><strong>Размер:</strong> ${discountValue}</p>
+                    <p><strong>Применяется к:</strong> ${targetText}</p>
+                    <p><strong>Период:</strong> ${new Date(discount.start_date).toLocaleDateString()} - ${new Date(discount.end_date).toLocaleDateString()}</p>
+                    <p><strong>Статус:</strong> <span class="${statusClass}">${statusText}</span></p>
+                    <p><strong>Описание:</strong> ${discount.description || 'Нет описания'}</p>
+                </div>
+                <div class="discount-actions">
+                    <button class="edit-discount-btn" data-id="${discount.id}">Редактировать</button>
+                </div>
+            `;
+            
+            // Обработчик для редактирования
+            const editBtn = discountItem.querySelector('.edit-discount-btn');
+            editBtn.addEventListener('click', () => {
+                openEditDiscountModal(discount);
+            });
+            
+            discountList.appendChild(discountItem);
+        });
+    }
+
+    // Функция для открытия модального окна редактирования скидки
+    function openEditDiscountModal(discount) {
+        document.getElementById("discount-modal-title").textContent = "Редактировать скидку";
+        document.getElementById("discount-id").value = discount.id;
+        document.getElementById("discount-name").value = discount.name;
+        document.getElementById("discount-description").value = discount.description || '';
+        document.getElementById("discount-type").value = discount.type;
+        document.getElementById("discount-value").value = discount.value;
+        
+        // Конвертируем даты в формат для datetime-local
+        const startDate = new Date(discount.start_date);
+        const endDate = new Date(discount.end_date);
+        const startDateFormatted = startDate.toISOString().slice(0, 16);
+        const endDateFormatted = endDate.toISOString().slice(0, 16);
+        
+        document.getElementById("discount-start-date").value = startDateFormatted;
+        document.getElementById("discount-end-date").value = endDateFormatted;
+        document.getElementById("discount-target").value = discount.target_type;
+        document.getElementById("discount-status").value = discount.status;
+        deleteDiscountBtn.style.display = "block";
+        saveDiscountBtn.textContent = "Сохранить изменения";
+        
+        // Показываем/скрываем дополнительные поля
+        const targetType = discount.target_type;
+        const gameGroup = document.getElementById("game-target-group");
+        const categoryGroup = document.getElementById("category-target-group");
+        const productGroup = document.getElementById("product-target-group");
+        
+        gameGroup.style.display = targetType === "game" ? "block" : "none";
+        categoryGroup.style.display = targetType === "category" ? "block" : "none";
+        productGroup.style.display = targetType === "product" ? "block" : "none";
+        
+        // Загружаем данные и устанавливаем значения
+        loadGamesForDiscount().then(() => {
+            if (targetType === "game" && discount.target_id) {
+                document.getElementById("discount-game-select").value = discount.target_id;
+            }
+        });
+        
+        loadCategoriesForDiscount().then(() => {
+            if (targetType === "category" && discount.target_id) {
+                document.getElementById("discount-category-select").value = discount.target_id;
+            }
+        });
+        
+        loadProductsForDiscount().then(() => {
+            if (targetType === "product" && discount.target_id) {
+                document.getElementById("discount-product-select").value = discount.target_id;
+            }
+        });
+        
+        discountModal.classList.add("show");
+    }
+
+    // Функция для получения скидок с сервера
+    function fetchDiscounts() {
+        fetch('/get-discounts')
+            .then(response => response.json())
+            .then(discounts => {
+                allDiscounts = discounts; // Сохраняем все скидки для поиска
+                displayDiscounts(discounts);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении скидок:', error);
+                discountList.innerHTML = '<p>Ошибка при загрузке скидок</p>';
+            });
+    }
+
+    // Функция поиска скидок (только по названию)
+    function searchDiscounts(searchTerm) {
+        if (!searchTerm.trim()) {
+            displayDiscounts(allDiscounts);
+            return;
+        }
+
+        const filtered = allDiscounts.filter(discount => {
+            const name = discount.name.toLowerCase();
+            const search = searchTerm.toLowerCase();
+            
+            return name.includes(search);
+        });
+
+        displayDiscounts(filtered);
+    }
+
+    // Функция для загрузки игр для скидок
+    function loadGamesForDiscount() {
+        return fetch('/get-games')
+            .then(response => response.json())
+            .then(games => {
+                const gameSelect = document.getElementById("discount-game-select");
+                gameSelect.innerHTML = '<option value="">Выберите игру</option>';
+                
+                games.forEach(game => {
+                    const option = document.createElement('option');
+                    option.value = game.id;
+                    option.textContent = game.name;
+                    gameSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении игр для скидок:', error);
+            });
+    }
+
+    // Функция для загрузки категорий для скидок
+    function loadCategoriesForDiscount() {
+        return fetch('/get-categories')
+            .then(response => response.json())
+            .then(categories => {
+                const categorySelect = document.getElementById("discount-category-select");
+                categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении категорий для скидок:', error);
+            });
+    }
+
+    // Функция для загрузки товаров для скидок
+    function loadProductsForDiscount() {
+        return fetch('/get-products')
+            .then(response => response.json())
+            .then(products => {
+                const productSelect = document.getElementById("discount-product-select");
+                productSelect.innerHTML = '<option value="">Выберите товар</option>';
+                
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = product.name;
+                    productSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении товаров для скидок:', error);
+            });
+    }
+
+    // Функция для получения промокодов с сервера
+    function fetchPromocodes() {
+        fetch('/get-promocodes')
+            .then(response => response.json())
+            .then(promocodes => {
+                allPromocodes = promocodes; // Сохраняем все промокоды для поиска
+                displayPromocodes(promocodes);
+            })
+            .catch(error => {
+                console.error('Ошибка при получении промокодов:', error);
+                promocodeList.innerHTML = '<p>Ошибка при загрузке промокодов</p>';
+            });
+    }
+
+    // Функция поиска промокодов (только по коду)
+    function searchPromocodes(searchTerm) {
+        if (!searchTerm.trim()) {
+            displayPromocodes(allPromocodes);
+            return;
+        }
+
+        const filtered = allPromocodes.filter(promocode => {
+            const code = promocode.code.toLowerCase();
+            const search = searchTerm.toLowerCase();
+            
+            return code.includes(search);
+        });
+
+        displayPromocodes(filtered);
+    }
+
+    // Функция для отображения промокодов
+    function displayPromocodes(promocodes) {
+        promocodeList.innerHTML = '';
+        
+        if (promocodes.length === 0) {
+            promocodeList.innerHTML = '<p>Промокоды не найдены. Добавьте первый промокод!</p>';
+            return;
+        }
+
+        promocodes.forEach(promocode => {
+            const promocodeItem = document.createElement('div');
+            promocodeItem.classList.add('promocode-item');
+            promocodeItem.innerHTML = `
+                <div class="promocode-info">
+                    <h4>${promocode.code}</h4>
+                    <p><strong>Размер:</strong> ${promocode.value}${promocode.type === 'percentage' ? '%' : ' ₽'}</p>
+                    <p><strong>Применяется к:</strong> ${getPromocodeTargetText(promocode)}</p>
+                    <p><strong>Период:</strong> ${formatDate(promocode.start_date)} - ${formatDate(promocode.end_date)}</p>
+                    <p><strong>Статус:</strong> <span class="status-${promocode.status}">${promocode.status === 'active' ? 'Активен' : 'Неактивен'}</span></p>
+                    <p><strong>Описание:</strong> ${promocode.description || 'Нет описания'}</p>
+                    <p><strong>Лимит использований:</strong> ${promocode.usage_limit || 'Без ограничений'}</p>
+                </div>
+                <div class="promocode-actions">
+                    <button class="edit-promocode-btn" data-id="${promocode.id}">Редактировать</button>
+                </div>
+            `;
+            
+            // Обработчик для редактирования
+            const editBtn = promocodeItem.querySelector('.edit-promocode-btn');
+            editBtn.addEventListener('click', () => {
+                openEditPromocodeModal(promocode);
+            });
+            
+            promocodeList.appendChild(promocodeItem);
+        });
+    }
+
+    // Функция для получения текста цели промокода
+    function getPromocodeTargetText(promocode) {
+        switch(promocode.target_type) {
+            case 'all':
+                return 'Все товары';
+            case 'game':
+                return `Игра: ${promocode.game_name || 'Не указана'}`;
+            case 'category':
+                return `Категория: ${promocode.category_name || 'Не указана'}`;
+            case 'product':
+                return `Товар: ${promocode.product_name || 'Не указан'}`;
+            default:
+                return 'Не указано';
+        }
+    }
+
+    // Функция для форматирования даты
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ru-RU');
+    }
+
+    // Функция для открытия модального окна редактирования промокода
+    function openEditPromocodeModal(promocode) {
+        document.getElementById("promocode-modal-title").textContent = "Редактировать промокод";
+        document.getElementById("promocode-id").value = promocode.id;
+        document.getElementById("promocode-code").value = promocode.code;
+        document.getElementById("promocode-description").value = promocode.description || '';
+        document.getElementById("promocode-type").value = promocode.type;
+        document.getElementById("promocode-value").value = promocode.value;
+        document.getElementById("promocode-target").value = promocode.target_type;
+        document.getElementById("promocode-usage-limit").value = promocode.usage_limit || '';
+        document.getElementById("promocode-status").value = promocode.status;
+        
+        // Форматируем даты для datetime-local
+        const startDate = new Date(promocode.start_date);
+        const endDate = new Date(promocode.end_date);
+        const startDateFormatted = startDate.toISOString().slice(0, 16);
+        const endDateFormatted = endDate.toISOString().slice(0, 16);
+        
+        document.getElementById("promocode-start-date").value = startDateFormatted;
+        document.getElementById("promocode-end-date").value = endDateFormatted;
+        
+        // Показываем/скрываем дополнительные поля
+        const targetType = promocode.target_type;
+        document.getElementById("promocode-game-group").style.display = targetType === "game" ? "block" : "none";
+        document.getElementById("promocode-category-group").style.display = targetType === "category" ? "block" : "none";
+        document.getElementById("promocode-product-group").style.display = targetType === "product" ? "block" : "none";
+        
+        // Загружаем данные для селекторов
+        loadGamesForPromocode().then(() => {
+            if (targetType === "game") {
+                document.getElementById("promocode-game-select").value = promocode.target_id;
+            }
+        });
+        
+        loadCategoriesForPromocode().then(() => {
+            if (targetType === "category") {
+                document.getElementById("promocode-category-select").value = promocode.target_id;
+            }
+        });
+        
+        loadProductsForPromocode().then(() => {
+            if (targetType === "product") {
+                document.getElementById("promocode-product-select").value = promocode.target_id;
+            }
+        });
+        
+        deletePromocodeBtn.style.display = "block";
+        savePromocodeBtn.textContent = "Сохранить изменения";
+        
+        promocodeModal.classList.add("show");
+    }
+
+    // Функция для загрузки игр для промокодов
+    function loadGamesForPromocode() {
+        return fetch('/get-games')
+            .then(response => response.json())
+            .then(games => {
+                const gameSelect = document.getElementById("promocode-game-select");
+                gameSelect.innerHTML = '<option value="">Выберите игру</option>';
+                
+                games.forEach(game => {
+                    const option = document.createElement('option');
+                    option.value = game.id;
+                    option.textContent = game.name;
+                    gameSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении игр для промокодов:', error);
+            });
+    }
+
+    // Функция для загрузки категорий для промокодов
+    function loadCategoriesForPromocode() {
+        return fetch('/get-categories')
+            .then(response => response.json())
+            .then(categories => {
+                const categorySelect = document.getElementById("promocode-category-select");
+                categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+                
+                categories.forEach(category => {
+                    const option = document.createElement('option');
+                    option.value = category.id;
+                    option.textContent = category.name;
+                    categorySelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении категорий для промокодов:', error);
+            });
+    }
+
+    // Функция для загрузки товаров для промокодов
+    function loadProductsForPromocode() {
+        return fetch('/get-products')
+            .then(response => response.json())
+            .then(products => {
+                const productSelect = document.getElementById("promocode-product-select");
+                productSelect.innerHTML = '<option value="">Выберите товар</option>';
+                
+                products.forEach(product => {
+                    const option = document.createElement('option');
+                    option.value = product.id;
+                    option.textContent = product.name;
+                    productSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Ошибка при получении товаров для промокодов:', error);
             });
     }
 
@@ -770,6 +1660,7 @@ document.addEventListener("DOMContentLoaded", function () {
         adminModal.classList.add("show");
         document.getElementById("admin-modal-title").textContent = "Добавить администратора";
         document.getElementById("admin-id").value = "";
+        document.getElementById("admin-user-search").value = "";
         document.getElementById("admin-user-select").value = "";
         document.getElementById("admin-role-select").value = "admin";
         deleteAdminBtn.style.display = "none";
@@ -917,6 +1808,23 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
+    // Функция поиска администраторов (только по имени пользователя)
+    function searchAdmins(searchTerm) {
+        if (!searchTerm.trim()) {
+            displayAdmins(allAdmins);
+            return;
+        }
+
+        const filtered = allAdmins.filter(admin => {
+            const username = admin.username.toLowerCase();
+            const search = searchTerm.toLowerCase();
+            
+            return username.includes(search);
+        });
+
+        displayAdmins(filtered);
+    }
+
     // Функция для открытия модального окна редактирования администратора
     function openEditAdminModal(admin) {
         document.getElementById("admin-modal-title").textContent = "Редактировать администратора";
@@ -927,7 +1835,11 @@ document.addEventListener("DOMContentLoaded", function () {
         
         // Загружаем пользователей и устанавливаем текущего
         fetchUsers().then(() => {
-            document.getElementById("admin-user-select").value = admin.user_id;
+            const user = allUsers.find(u => u.id == admin.user_id);
+            if (user) {
+                document.getElementById("admin-user-search").value = user.username;
+                document.getElementById("admin-user-select").value = admin.user_id;
+            }
         });
         
         adminModal.classList.add("show");
@@ -938,6 +1850,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch('/get-admins')
             .then(response => response.json())
             .then(admins => {
+                allAdmins = admins; // Сохраняем всех администраторов для поиска
                 displayAdmins(admins);
             })
             .catch(error => {
@@ -947,23 +1860,129 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // Функция для получения пользователей с сервера
+    let allUsers = []; // Глобальная переменная для хранения всех пользователей
+
     function fetchUsers() {
         return fetch('/get-users')
             .then(response => response.json())
             .then(users => {
-                const userSelect = document.getElementById("admin-user-select");
-                userSelect.innerHTML = '<option value="">Выберите пользователя</option>';
-                
-                users.forEach(user => {
-                    const option = document.createElement('option');
-                    option.value = user.id;
-                    option.textContent = user.username;
-                    userSelect.appendChild(option);
-                });
+                allUsers = users; // Сохраняем всех пользователей
+                setupUserSearch(); // Настраиваем поиск
             })
             .catch(error => {
                 console.error('Ошибка при получении пользователей:', error);
             });
+    }
+
+    function setupUserSearch() {
+        const searchInput = document.getElementById('admin-user-search');
+        const searchResults = document.getElementById('user-search-results');
+        const hiddenInput = document.getElementById('admin-user-select');
+
+        // Обработчик ввода в поле поиска
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim();
+            
+            if (query.length < 2) {
+                searchResults.style.display = 'none';
+                return;
+            }
+
+            // Поиск по имени пользователя и SteamID
+            const filteredUsers = allUsers.filter(user => {
+                const username = user.username.toLowerCase();
+                const steamId = user.steam_id ? user.steam_id.toLowerCase() : '';
+                const searchQuery = query.toLowerCase();
+                
+                return username.includes(searchQuery) || steamId.includes(searchQuery);
+            });
+
+            displaySearchResults(filteredUsers);
+        });
+
+        // Обработчик клика вне поля поиска
+        document.addEventListener('click', function(e) {
+            if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                searchResults.style.display = 'none';
+            }
+        });
+
+        // Обработчик клавиш для навигации
+        searchInput.addEventListener('keydown', function(e) {
+            const items = searchResults.querySelectorAll('.search-result-item');
+            const selected = searchResults.querySelector('.search-result-item.selected');
+            let selectedIndex = -1;
+
+            if (selected) {
+                selectedIndex = Array.from(items).indexOf(selected);
+            }
+
+            switch(e.key) {
+                case 'ArrowDown':
+                    e.preventDefault();
+                    if (selectedIndex < items.length - 1) {
+                        if (selected) selected.classList.remove('selected');
+                        items[selectedIndex + 1].classList.add('selected');
+                    }
+                    break;
+                case 'ArrowUp':
+                    e.preventDefault();
+                    if (selectedIndex > 0) {
+                        if (selected) selected.classList.remove('selected');
+                        items[selectedIndex - 1].classList.add('selected');
+                    }
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    if (selected) {
+                        selected.click();
+                    }
+                    break;
+                case 'Escape':
+                    searchResults.style.display = 'none';
+                    break;
+            }
+        });
+    }
+
+    function displaySearchResults(users) {
+        const searchResults = document.getElementById('user-search-results');
+        
+        if (users.length === 0) {
+            searchResults.innerHTML = '<div class="search-result-item">Пользователи не найдены</div>';
+        } else {
+            searchResults.innerHTML = '';
+            
+            users.forEach(user => {
+                const item = document.createElement('div');
+                item.className = 'search-result-item';
+                item.innerHTML = `
+                    <div class="search-result-username">${user.username}</div>
+                    <div class="search-result-steamid">SteamID: ${user.steam_id || 'Не указан'}</div>
+                `;
+                
+                item.addEventListener('click', function() {
+                    selectUser(user);
+                });
+                
+                searchResults.appendChild(item);
+            });
+        }
+        
+        searchResults.style.display = 'block';
+    }
+
+    function selectUser(user) {
+        const searchInput = document.getElementById('admin-user-search');
+        const searchResults = document.getElementById('user-search-results');
+        const hiddenInput = document.getElementById('admin-user-select');
+        
+        // Устанавливаем выбранного пользователя
+        searchInput.value = user.username;
+        hiddenInput.value = user.id;
+        
+        // Скрываем результаты поиска
+        searchResults.style.display = 'none';
     }
 
     // ========== ФУНКЦИОНАЛ СМЕНЫ ПАРОЛЯ ==========
@@ -973,12 +1992,8 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(`/check-temp-password/${username}`)
             .then(response => response.json())
             .then(data => {
-                console.log("isTempPassword значение:", data.isTempPassword, "тип:", typeof data.isTempPassword);
                 if (data.isTempPassword === true || data.isTempPassword === 1) {
-                    console.log("Показываем модальное окно смены пароля");
                     showChangePasswordModal(username);
-                } else {
-                    console.log("Пароль не временный, модальное окно не показываем");
                 }
             })
             .catch(error => {
@@ -988,7 +2003,6 @@ document.addEventListener("DOMContentLoaded", function () {
     
     // Функция для показа модального окна смены пароля
     function showChangePasswordModal(username) {
-        console.log("Функция showChangePasswordModal вызвана для пользователя:", username);
         // Создаем модальное окно
         const modal = document.createElement('div');
         modal.id = 'change-password-modal';
@@ -1023,18 +2037,7 @@ document.addEventListener("DOMContentLoaded", function () {
         `;
         
         document.body.appendChild(modal);
-        console.log("Модальное окно добавлено в DOM");
         
-        // Проверяем стили модального окна
-        const modalElement = document.getElementById('change-password-modal');
-        const computedStyle = window.getComputedStyle(modalElement);
-        console.log("Модальное окно стили:", {
-            display: computedStyle.display,
-            position: computedStyle.position,
-            zIndex: computedStyle.zIndex,
-            width: computedStyle.width,
-            height: computedStyle.height
-        });
         
         // Обработчики событий
         const closeBtn = modal.querySelector('.close-btn');
@@ -1098,4 +2101,228 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     }
+
+    // ========== ФУНКЦИОНАЛ СОРТИРОВКИ ТОВАРОВ ==========
+
+    // Элементы для работы с сортировкой
+    const addSortingBtn = document.getElementById("add-sorting-btn");
+    const sortingGameSelect = document.getElementById("sorting-game-select");
+    const loadProductsBtn = document.getElementById("load-products-for-sorting");
+    const sortingProductsArea = document.getElementById("sorting-products-area");
+    const sortableProductsList = document.getElementById("sortable-products-list");
+    const saveSortingBtn = document.getElementById("save-sorting-btn");
+    const resetSortingBtn = document.getElementById("reset-sorting-btn");
+
+
+    let currentSortingProducts = [];
+    let originalProductOrder = [];
+
+    // Переключение на раздел сортировки
+    addSortingBtn.addEventListener("click", function() {
+        showSortingSection();
+    });
+
+    // Заполнение списка игр для сортировки
+    function populateSortingGames() {
+        if (!sortingGameSelect) {
+            console.error('sortingGameSelect element not found!');
+            return;
+        }
+        
+        sortingGameSelect.innerHTML = '<option value="">Выберите игру</option>';
+        allGames.forEach(game => {
+            const option = document.createElement('option');
+            option.value = game.id;
+            option.textContent = game.name;
+            sortingGameSelect.appendChild(option);
+        });
+    }
+
+    // Функция для скрытия всех секций
+    function hideAllSections() {
+        productsSection.style.display = "none";
+        categoriesSection.style.display = "none";
+        discountsSection.style.display = "none";
+        if (promocodesSection) promocodesSection.style.display = "none";
+        adminsSection.style.display = "none";
+        sortingSection.style.display = "none";
+    }
+
+    // Показ секции сортировки
+    function showSortingSection() {
+        hideAllSections();
+        sortingSection.style.display = 'block';
+        
+        // Всегда загружаем игры заново для актуальности
+        fetchGames().then(() => {
+            populateSortingGames();
+        }).catch(error => {
+            console.error('Error fetching games:', error);
+        });
+    }
+
+    // Обработчик изменения игры
+    sortingGameSelect.addEventListener('change', function() {
+        if (this.value) {
+            loadProductsBtn.style.display = 'block';
+        } else {
+            loadProductsBtn.style.display = 'none';
+            sortingProductsArea.style.display = 'none';
+        }
+    });
+
+    // Загрузка товаров для сортировки
+    loadProductsBtn.addEventListener('click', function() {
+        const gameId = sortingGameSelect.value;
+        if (!gameId) return;
+
+        // Фильтруем товары по выбранной игре
+        currentSortingProducts = allProducts.filter(product => product.game_id == gameId);
+        originalProductOrder = [...currentSortingProducts];
+
+        // Сортируем по текущему порядку (если есть поле sort_order)
+        currentSortingProducts.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+        displaySortableProducts();
+        sortingProductsArea.style.display = 'block';
+    });
+
+    // Отображение сортируемых товаров
+    function displaySortableProducts() {
+        sortableProductsList.innerHTML = '';
+        
+        currentSortingProducts.forEach((product, index) => {
+            const game = allGames.find(g => g.id === product.game_id);
+            const category = allCategories.find(c => c.id === product.category_id);
+            
+            const productItem = document.createElement('div');
+            productItem.className = 'sortable-item';
+            productItem.draggable = true;
+            productItem.dataset.productId = product.id;
+            
+            productItem.innerHTML = `
+                <div class="sortable-item-order">${index + 1}</div>
+                <img src="${product.image_url || '/img/placeholder.png'}" alt="${product.name}" class="sortable-item-image">
+                <div class="sortable-item-info">
+                    <h4 class="sortable-item-name">${product.name}</h4>
+                    <div class="sortable-item-meta">
+                        ${game ? `<span class="sortable-item-game">${game.name}</span>` : ''}
+                        ${category ? `<span class="sortable-item-category">${category.name}</span>` : ''}
+                    </div>
+                    <div class="sortable-item-price">${product.price} ₽</div>
+                </div>
+                <div class="sortable-item-drag-handle">⋮⋮</div>
+            `;
+            
+            // Добавляем обработчики перетаскивания
+            productItem.addEventListener('dragstart', handleDragStart);
+            productItem.addEventListener('dragover', handleDragOver);
+            productItem.addEventListener('drop', handleDrop);
+            productItem.addEventListener('dragend', handleDragEnd);
+            
+            sortableProductsList.appendChild(productItem);
+        });
+    }
+
+    // Обработчики перетаскивания
+    let draggedElement = null;
+
+    function handleDragStart(e) {
+        draggedElement = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const afterElement = getDragAfterElement(sortableProductsList, e.clientY);
+        if (afterElement == null) {
+            sortableProductsList.appendChild(draggedElement);
+        } else {
+            sortableProductsList.insertBefore(draggedElement, afterElement);
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        return false;
+    }
+
+    function handleDragEnd(e) {
+        this.classList.remove('dragging');
+        draggedElement = null;
+        updateProductOrder();
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Обновление порядка товаров
+    function updateProductOrder() {
+        const items = sortableProductsList.querySelectorAll('.sortable-item');
+        items.forEach((item, index) => {
+            const orderElement = item.querySelector('.sortable-item-order');
+            orderElement.textContent = index + 1;
+        });
+    }
+
+    // Сохранение нового порядка
+    saveSortingBtn.addEventListener('click', function() {
+        const items = sortableProductsList.querySelectorAll('.sortable-item');
+        const newOrder = Array.from(items).map((item, index) => ({
+            id: parseInt(item.dataset.productId),
+            sort_order: index + 1
+        }));
+
+        // Отправляем новый порядок на сервер
+        fetch('/update-product-order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ products: newOrder })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Порядок товаров сохранен!');
+                // Обновляем локальные данные
+                newOrder.forEach(item => {
+                    const product = allProducts.find(p => p.id === item.id);
+                    if (product) {
+                        product.sort_order = item.sort_order;
+                    }
+                });
+            } else {
+                alert('Ошибка при сохранении порядка');
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка:', error);
+            alert('Ошибка при сохранении порядка');
+        });
+    });
+
+    // Сброс порядка
+    resetSortingBtn.addEventListener('click', function() {
+        if (confirm('Вы уверены, что хотите сбросить порядок товаров?')) {
+            currentSortingProducts = [...originalProductOrder];
+            displaySortableProducts();
+        }
+    });
 });

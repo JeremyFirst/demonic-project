@@ -57,7 +57,8 @@
 /* === Стили для бокового меню и контента === */
 .profile-row {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+    align-items: flex-start;
     gap: 30px;
     width: 100%;
     max-width: 1200px;
@@ -71,8 +72,11 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    width: 220px;
     min-width: 220px;
+    max-width: 220px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
 }
 
 /* Кнопки в меню */
@@ -114,12 +118,13 @@
 
 /* === Стили для контейнера с информацией === */
 .profile-content {
-    background-color: white;
+    background-color: #773535e3;
     padding: 25px;
     border-radius: 10px;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
     text-align: center;
     min-width: 1000px;
+    overflow-x: auto;
 }
 
 /* === Стиль для информации о пользователе === */
@@ -213,4 +218,520 @@ button:hover {
 body.blocked {
     pointer-events: none; /* Запрещаем взаимодействие с остальной страницей */
     background-color: rgba(0, 0, 0, 0.5); /* Придаем затемнение */
+}
+
+/* Стили для истории заказов */
+.orders-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.order-item {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color 0.3s ease;
+}
+
+.order-item:hover {
+    border-color: #666;
+}
+
+.order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.order-id {
+    color: #fff;
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.order-date {
+    color: #888;
+    font-size: 14px;
+}
+
+.order-status {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.status-completed {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.status-pending {
+    background-color: #ffc107;
+    color: #000;
+}
+
+.status-cancelled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.order-items {
+    color: #ccc;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.order-total {
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    text-align: right;
+    border-top: 1px solid #444;
+    padding-top: 10px;
+}
+
+@media (max-width: 768px) {
+    .order-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .order-status {
+        align-self: flex-end;
+    }
+}
+
+/* Стили для секции финансов */
+.finance-section {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.finance-section h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+/* Стили для приветственной секции */
+.welcome-section {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.welcome-section h2 {
+    color: #fff;
+    font-size: 28px;
+    margin-bottom: 20px;
+}
+
+.welcome-section p {
+    color: #888;
+    font-size: 16px;
+    margin-bottom: 40px;
+}
+
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-card h3 {
+    color: #888;
+    font-size: 14px;
+    margin: 0 0 10px 0;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    color: #28a745;
+    font-size: 24px;
+    font-weight: bold;
+}
+
+/* Стили для секции переводов */
+.transfer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.transfer-form-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    align-items: start;
+    margin-bottom: 40px;
+}
+
+.transfer-info,
+.transfer-form {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.transfer-info {
+    padding: 0;
+}
+
+.transfer-info h4,
+.transfer-form h4 {
+    color: #fff;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.info-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex: 1;
+}
+
+.info-card {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+}
+
+.info-card h4,
+.info-card h5 {
+    color: #fff;
+    font-size: 16px;
+    margin: 0 0 10px 0;
+}
+
+.info-value {
+    color: #28a745;
+    font-size: 20px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10px;
+}
+
+.info-card p {
+    color: #888;
+    font-size: 14px;
+    margin: 0;
+}
+
+.transfer-form {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 25px;
+    flex: 1;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background-color: #1a1a1a;
+    color: #fff;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.recipient-info {
+    margin-top: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.recipient-found {
+    background-color: #1e3a1e;
+    border: 1px solid #28a745;
+    color: #28a745;
+}
+
+.recipient-not-found {
+    background-color: #3a1e1e;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+
+.recipient-error {
+    background-color: #3a3a1e;
+    border: 1px solid #ffc107;
+    color: #ffc107;
+}
+
+.recipient-name {
+    font-weight: bold;
+}
+
+.recipient-balance {
+    color: #888;
+    font-size: 12px;
+    display: block;
+    margin-top: 5px;
+}
+
+.amount-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+.commission-info,
+.total-info {
+    color: #888;
+}
+
+.total-info {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+.form-actions {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.check-recipient-btn,
+.send-transfer-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.check-recipient-btn {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.check-recipient-btn:hover {
+    background-color: #5a6268;
+}
+
+.send-transfer-btn {
+    background-color: #28a745;
+    color: #fff;
+}
+
+.send-transfer-btn:hover:not(:disabled) {
+    background-color: #218838;
+}
+
+.send-transfer-btn:disabled {
+    background-color: #444;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Стили для истории переводов */
+.transfer-history {
+    background-color: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 25px;
+}
+
+.transfer-history h3 {
+    color: #fff;
+    font-size: 18px;
+    margin: 0 0 20px 0;
+}
+
+.transfers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.transfer-item {
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    padding: 20px;
+    transition: border-color 0.3s ease;
+}
+
+.transfer-item:hover {
+    border-color: #666;
+}
+
+.transfer-item.sent {
+    border-left: 4px solid #dc3545;
+}
+
+.transfer-item.received {
+    border-left: 4px solid #28a745;
+}
+
+.transfer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.transfer-type {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.transfer-item.sent .transfer-type {
+    color: #dc3545;
+}
+
+.transfer-item.received .transfer-type {
+    color: #28a745;
+}
+
+.transfer-date {
+    color: #888;
+    font-size: 12px;
+}
+
+.transfer-details {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.transfer-user {
+    color: #ccc;
+    font-size: 14px;
+}
+
+.transfer-amount {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.transfer-amount.sent {
+    color: #dc3545;
+}
+
+.transfer-amount.received {
+    color: #28a745;
+}
+
+.commission {
+    font-size: 12px;
+    color: #888;
+    font-weight: normal;
+}
+
+.transfer-message {
+    color: #888;
+    font-style: italic;
+    font-size: 14px;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #2a2a2a;
+    border-radius: 6px;
+}
+
+.no-transfers,
+.loading,
+.error {
+    text-align: center;
+    color: #888;
+    padding: 40px 20px;
+    font-size: 16px;
+}
+
+.error {
+    color: #dc3545;
+}
+
+/* Стили для заглушек */
+.section-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.section-placeholder h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.section-placeholder p {
+    color: #888;
+    font-size: 16px;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .transfer-form-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .transfer-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .amount-info {
+        flex-direction: column;
+        gap: 5px;
+    }
 }

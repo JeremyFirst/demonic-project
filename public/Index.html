@@ -11,17 +11,22 @@
 <body>
     <header>
       <div class="logo">
-        <img src="/img/logotip-demonic.svg" alt="Logo">
+        <img src="/img/logotip-demonic.svg?v=1" alt="Logo">
     </div>
         <nav class="navbar">
           <ul class="menu">
             <li><a href="#" class="active-page">Главная</a></li>
-            <li><a href="#">Магазины</a></li>
+            <li><a href="http://localhost:3000/store.html">Магазин</a></li>
             <li><a href="#footer">Контакты</a></li>
-            <li><a href="http://localhost:3000/auth/steam" id="auth-btn">Авторизация</a></li>
+            <li><a href="http://localhost:3000/auth/steam?returnUrl=/Index.html" id="auth-btn">Авторизация</a></li>
             <li class="profile-info" style="display: none;">
-                <a href="http://localhost:3000/profile.html" class="profile-name"></a>
-                <img class="profile-avatar" src="" alt="Avatar">
+                <div class="user-balance">
+                    <span class="balance-amount">0</span>
+                    <span class="balance-currency">₽</span>
+                </div>
+                <a href="http://localhost:3000/profile.html" class="profile-avatar-link">
+                    <img class="profile-avatar" src="" alt="Avatar">
+                </a>
             </li>
           <button class="menu-btn">&#9776;</button> 
         </nav>

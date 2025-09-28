@@ -15,6 +15,12 @@ document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("steam-id").textContent = user.steam_id;
             document.getElementById("balance").textContent = user.balance + " ₽";
             document.getElementById("discount").textContent = user.discount + "%";
+            
+            // Устанавливаем ID пользователя для переводов
+            const userDetailsInfo = document.querySelector('.user-details-info');
+            if (userDetailsInfo) {
+                userDetailsInfo.dataset.userId = user.id;
+            }
 
             // Проверка наличия элемента аватара
             const avatarElement = document.querySelector(".user-avatar");
@@ -110,31 +116,63 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
     function loadSection(section) {
-        let content = "";
         switch (section) {
-            case "cart":
-                content = "<h3>Корзина</h3><p>Ваши товары...</p>";
-                break;
             case "history":
-                content = "<h3>История</h3><p>История покупок...</p>";
-                break;
+                loadOrderHistory();
+                return;
             case "finance":
-                content = "<h3>Финансы</h3><p>Баланс и платежи...</p>";
-                break;
+                loadFinanceSection();
+                return;
             case "promocodes":
-                content = "<h3>Промокоды</h3><p>Активные промокоды...</p>";
-                break;
+                loadPromocodesSection();
+                return;
             case "messages":
-                content = "<h3>Сообщения</h3><p>Ваши сообщения...</p>";
-                break;
+                loadMessagesSection();
+                return;
             case "freeze":
-                content = "<h3>Заморозка</h3><p>Функция временной заморозки...</p>";
-                break;
+                loadFreezeSection();
+                return;
             case "upgrade":
-                content = "<h3>Улучшение</h3><p>Опции апгрейда...</p>";
-                break;
+                loadUpgradeSection();
+                return;
+            default:
+                loadDefaultSection();
         }
+    }
+
+    function loadDefaultSection() {
+        const content = `
+            <div class="welcome-section">
+                <h2>Добро пожаловать в ваш профиль!</h2>
+                <p>Выберите раздел в меню слева для навигации по профилю.</p>
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <h3>Баланс</h3>
+                        <span id="welcome-balance" class="stat-value">0 ₽</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Скидка</h3>
+                        <span id="welcome-discount" class="stat-value">0%</span>
+                    </div>
+                </div>
+            </div>
+        `;
         document.getElementById("dynamic-content").innerHTML = content;
+        updateWelcomeStats();
+    }
+
+    function updateWelcomeStats() {
+        fetch('/profile')
+            .then(response => response.json())
+            .then(user => {
+                const balanceElement = document.getElementById('welcome-balance');
+                const discountElement = document.getElementById('welcome-discount');
+                if (balanceElement) balanceElement.textContent = user.balance + ' ₽';
+                if (discountElement) discountElement.textContent = user.discount + '%';
+            })
+            .catch(error => {
+                console.error('Ошибка при получении статистики:', error);
+            });
     }
 
     // Функции для работы с куками
@@ -153,5 +191,372 @@ document.addEventListener("DOMContentLoaded", function () {
             if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
         }
         return null;
+    }
+
+    // Функция загрузки истории заказов
+    function loadOrderHistory() {
+        fetch('/user-orders')
+            .then(response => response.json())
+            .then(orders => {
+                let content = '<h3>История заказов</h3>';
+                
+                if (orders.length === 0) {
+                    content += '<p style="text-align: center; color: #888; padding: 20px;">У вас пока нет заказов</p>';
+                } else {
+                    content += '<div class="orders-list">';
+                    
+                    orders.forEach(order => {
+                        const orderDate = new Date(order.created_at).toLocaleDateString('ru-RU', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        const statusText = order.status === 'completed' ? 'Выполнен' : 
+                                         order.status === 'pending' ? 'В обработке' : 'Отменен';
+                        
+                        const statusClass = order.status === 'completed' ? 'status-completed' : 
+                                          order.status === 'pending' ? 'status-pending' : 'status-cancelled';
+                        
+                        content += `
+                            <div class="order-item">
+                                <div class="order-header">
+                                    <span class="order-id">Заказ #${order.id}</span>
+                                    <span class="order-date">${orderDate}</span>
+                                    <span class="order-status ${statusClass}">${statusText}</span>
+                                </div>
+                                <div class="order-items">${order.items}</div>
+                                <div class="order-total">Итого: ${order.total_amount} ₽</div>
+                            </div>
+                        `;
+                    });
+                    
+                    content += '</div>';
+                }
+                
+                document.getElementById("dynamic-content").innerHTML = content;
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке истории заказов:', error);
+                document.getElementById("dynamic-content").innerHTML = 
+                    '<h3>История заказов</h3><p style="color: #dc3545;">Ошибка при загрузке истории заказов</p>';
+            });
+    }
+
+    // Функция загрузки секции финансов
+    function loadFinanceSection() {
+        const content = `
+            <div class="finance-section">
+                <h2>Переводы между пользователями</h2>
+                
+                <div class="transfer-section">
+                    <div class="transfer-form-container">
+                        <div class="transfer-info">
+                            <h4>Информация о переводах</h4>
+                            <div class="info-cards">
+                                <div class="info-card">
+                                    <h5>Комиссия</h5>
+                                    <span class="info-value">5%</span>
+                                    <p>С каждого перевода взимается комиссия 5%</p>
+                                </div>
+                                <div class="info-card">
+                                    <h5>Минимальная сумма</h5>
+                                    <span class="info-value">10 ₽</span>
+                                    <p>Минимальная сумма для перевода</p>
+                                </div>
+                                <div class="info-card">
+                                    <h5>Максимальная сумма</h5>
+                                    <span class="info-value">50,000 ₽</span>
+                                    <p>Максимальная сумма за один перевод</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="transfer-form">
+                            <h4>Создать перевод</h4>
+                            <form id="transfer-form">
+                                <div class="form-group">
+                                    <label for="recipient-username">Получатель (имя пользователя):</label>
+                                    <input type="text" id="recipient-username" placeholder="Введите имя пользователя" required>
+                                    <div id="recipient-info" class="recipient-info" style="display: none;"></div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="transfer-amount">Сумма перевода:</label>
+                                    <input type="number" id="transfer-amount" placeholder="Введите сумму" min="10" max="50000" step="0.01" required>
+                                    <div class="amount-info">
+                                        <span class="commission-info">Комиссия (5%): <span id="commission-amount">0 ₽</span></span>
+                                        <span class="total-info">К списанию: <span id="total-amount">0 ₽</span></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="transfer-message">Сообщение (необязательно):</label>
+                                    <textarea id="transfer-message" placeholder="Введите сообщение для получателя" maxlength="200"></textarea>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="button" id="check-recipient-btn" class="check-recipient-btn">Проверить получателя</button>
+                                    <button type="submit" id="send-transfer-btn" class="send-transfer-btn" disabled>Отправить перевод</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="transfer-history">
+                    <h3>История переводов</h3>
+                    <div id="transfers-list" class="transfers-list">
+                        <p class="loading">Загрузка истории переводов...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById("dynamic-content").innerHTML = content;
+        
+        // Настраиваем обработчики для переводов
+        setupTransferEventListeners();
+        loadTransferHistory();
+    }
+
+    function setupTransferEventListeners() {
+        const recipientInput = document.getElementById('recipient-username');
+        const amountInput = document.getElementById('transfer-amount');
+        const checkBtn = document.getElementById('check-recipient-btn');
+        const transferForm = document.getElementById('transfer-form');
+        
+        // Проверка получателя при вводе
+        let checkTimeout;
+        recipientInput.addEventListener('input', function() {
+            clearTimeout(checkTimeout);
+            checkTimeout = setTimeout(() => {
+                if (this.value.length >= 3) {
+                    checkRecipient(this.value);
+                } else {
+                    document.getElementById('recipient-info').style.display = 'none';
+                    document.getElementById('send-transfer-btn').disabled = true;
+                }
+            }, 500);
+        });
+        
+        // Расчет комиссии при изменении суммы
+        amountInput.addEventListener('input', calculateTransferAmount);
+        
+        // Кнопка проверки получателя
+        checkBtn.addEventListener('click', function() {
+            const username = recipientInput.value.trim();
+            if (username) {
+                checkRecipient(username);
+            }
+        });
+        
+        // Отправка перевода
+        transferForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            sendTransfer();
+        });
+    }
+
+    function calculateTransferAmount() {
+        const amount = parseFloat(document.getElementById('transfer-amount').value) || 0;
+        const commission = amount * 0.05;
+        const total = amount + commission;
+        
+        document.getElementById('commission-amount').textContent = commission.toFixed(2) + ' ₽';
+        document.getElementById('total-amount').textContent = total.toFixed(2) + ' ₽';
+    }
+
+    function checkRecipient(username) {
+        fetch('/check-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ username: username })
+        })
+        .then(response => response.json())
+        .then(result => {
+            const recipientInfo = document.getElementById('recipient-info');
+            const sendBtn = document.getElementById('send-transfer-btn');
+            
+            if (result.success) {
+                recipientInfo.innerHTML = `
+                    <div class="recipient-found">
+                        <span class="recipient-name">✓ ${result.user.username}</span>
+                        <span class="recipient-balance">Баланс: ${result.user.balance} ₽</span>
+                    </div>
+                `;
+                recipientInfo.style.display = 'block';
+                sendBtn.disabled = false;
+            } else {
+                recipientInfo.innerHTML = `
+                    <div class="recipient-not-found">
+                        <span>✗ Пользователь не найден</span>
+                    </div>
+                `;
+                recipientInfo.style.display = 'block';
+                sendBtn.disabled = true;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при проверке пользователя:', error);
+            document.getElementById('recipient-info').innerHTML = `
+                <div class="recipient-error">
+                    <span>Ошибка при проверке пользователя</span>
+                </div>
+            `;
+            document.getElementById('recipient-info').style.display = 'block';
+        });
+    }
+
+    function sendTransfer() {
+        const recipient = document.getElementById('recipient-username').value.trim();
+        const amount = parseFloat(document.getElementById('transfer-amount').value);
+        const message = document.getElementById('transfer-message').value.trim();
+        
+        if (!recipient || !amount || amount < 10 || amount > 50000) {
+            alert('Проверьте правильность введенных данных');
+            return;
+        }
+        
+        const confirmMessage = `Подтвердите перевод:\n\nПолучатель: ${recipient}\nСумма: ${amount} ₽\nКомиссия: ${(amount * 0.05).toFixed(2)} ₽\nК списанию: ${(amount * 1.05).toFixed(2)} ₽`;
+        
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+        
+        fetch('/send-transfer', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                recipient_username: recipient,
+                amount: amount,
+                message: message
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert('Перевод успешно отправлен!');
+                // Очищаем форму
+                document.getElementById('transfer-form').reset();
+                document.getElementById('recipient-info').style.display = 'none';
+                document.getElementById('send-transfer-btn').disabled = true;
+                calculateTransferAmount();
+                
+                // Обновляем баланс в профиле
+                document.getElementById("balance").textContent = result.newBalance + " ₽";
+                
+                // Обновляем историю переводов
+                loadTransferHistory();
+            } else {
+                alert('Ошибка при отправке перевода: ' + result.error);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при отправке перевода:', error);
+            alert('Ошибка при отправке перевода');
+        });
+    }
+
+    function loadTransferHistory() {
+        fetch('/transfer-history')
+            .then(response => response.json())
+            .then(transfers => {
+                const transfersList = document.getElementById('transfers-list');
+                
+                if (transfers.length === 0) {
+                    transfersList.innerHTML = '<p class="no-transfers">У вас пока нет переводов</p>';
+                    return;
+                }
+                
+                let html = '';
+                transfers.forEach(transfer => {
+                    const date = new Date(transfer.created_at).toLocaleDateString('ru-RU', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    const type = transfer.sender_id === parseInt(document.querySelector('[data-user-id]')?.dataset.userId) ? 'sent' : 'received';
+                    const otherUser = type === 'sent' ? transfer.recipient_username : transfer.sender_username;
+                    const amount = type === 'sent' ? -transfer.amount : transfer.amount;
+                    const commission = type === 'sent' ? transfer.commission : 0;
+                    
+                    html += `
+                        <div class="transfer-item ${type}">
+                            <div class="transfer-header">
+                                <span class="transfer-type">${type === 'sent' ? 'Отправлен' : 'Получен'}</span>
+                                <span class="transfer-date">${date}</span>
+                            </div>
+                            <div class="transfer-details">
+                                <div class="transfer-user">
+                                    ${type === 'sent' ? 'Получатель' : 'Отправитель'}: <strong>${otherUser}</strong>
+                                </div>
+                                <div class="transfer-amount ${type}">
+                                    ${type === 'sent' ? '-' : '+'}${Math.abs(amount)} ₽
+                                    ${commission > 0 ? `<span class="commission">(комиссия: ${commission} ₽)</span>` : ''}
+                                </div>
+                                ${transfer.message ? `<div class="transfer-message">"${transfer.message}"</div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                transfersList.innerHTML = html;
+            })
+            .catch(error => {
+                console.error('Ошибка при загрузке истории переводов:', error);
+                document.getElementById('transfers-list').innerHTML = 
+                    '<p class="error">Ошибка при загрузке истории переводов</p>';
+            });
+    }
+
+    // Заглушки для других секций
+    function loadPromocodesSection() {
+        const content = `
+            <div class="section-placeholder">
+                <h2>Промокоды</h2>
+                <p>Раздел промокодов находится в разработке.</p>
+            </div>
+        `;
+        document.getElementById("dynamic-content").innerHTML = content;
+    }
+
+    function loadMessagesSection() {
+        const content = `
+            <div class="section-placeholder">
+                <h2>Сообщения</h2>
+                <p>Раздел сообщений находится в разработке.</p>
+            </div>
+        `;
+        document.getElementById("dynamic-content").innerHTML = content;
+    }
+
+    function loadFreezeSection() {
+        const content = `
+            <div class="section-placeholder">
+                <h2>Заморозка</h2>
+                <p>Раздел заморозки находится в разработке.</p>
+            </div>
+        `;
+        document.getElementById("dynamic-content").innerHTML = content;
+    }
+
+    function loadUpgradeSection() {
+        const content = `
+            <div class="section-placeholder">
+                <h2>Улучшение</h2>
+                <p>Раздел улучшений находится в разработке.</p>
+            </div>
+        `;
+        document.getElementById("dynamic-content").innerHTML = content;
     }
 });

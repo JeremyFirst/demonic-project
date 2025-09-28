@@ -2,6 +2,7 @@ require('dotenv').config();  // Загружаем переменные из .en
 const express = require('express');  // Подключаем Express
 const app = express();  // Инициализируем объект app
 const session = require('express-session');  // Подключаем сессии
+const cookieParser = require('cookie-parser');  // Подключаем cookie-parser
 const passport = require('passport');  // Подключаем Passport для аутентификации
 const SteamStrategy = require('passport-steam').Strategy;  // Подключаем Steam Strategy для аутентификации
 const mysql = require('mysql2');  // Подключаем mysql2 для работы с базой данных
@@ -34,6 +35,9 @@ app.use(session({
     resave: false,
     saveUninitialized: true
 }));
+
+// Настройка cookie-parser
+app.use(cookieParser());
 
 // Подключение к базе данных
 const db = mysql.createConnection({
@@ -114,9 +118,14 @@ app.get('/', (req, res) => {
 
 // Маршрут для Steam авторизации с сохранением предыдущей страницы
 app.get('/auth/steam', (req, res, next) => {
-    if (req.headers.referer) {
-        req.session.returnTo = req.headers.referer;  // Запоминаем, откуда ушел игрок
-    }
+    // Сохраняем returnUrl в cookie (более надежно чем сессия)
+    const returnUrl = req.query.returnUrl || req.headers.referer || '/profile.html';
+    res.cookie('returnUrl', returnUrl, { 
+        maxAge: 5 * 60 * 1000, // 5 минут
+        httpOnly: true,
+        secure: false // для localhost
+    });
+    
     passport.authenticate('steam')(req, res, next);
 });
 
@@ -124,7 +133,10 @@ app.get('/auth/steam', (req, res, next) => {
 app.get('/auth/steam/return',
     passport.authenticate('steam', { failureRedirect: '/' }),
     (req, res) => {
-        const returnTo = req.session.returnTo || '/profile.html';
+        const returnTo = req.cookies.returnUrl || req.query.returnUrl || req.session.returnTo || '/profile.html';
+        
+        // Очищаем cookie
+        res.clearCookie('returnUrl');
         delete req.session.returnTo;
         res.redirect(returnTo);
     });
@@ -452,6 +464,23 @@ app.get('/get-products', (req, res) => {
             return res.status(500).json({ error: 'Ошибка при получении товаров' });
         }
         res.json(results);  // Ответ возвращается здесь, res доступна
+    });
+});
+
+// Endpoint для клиентской части магазина
+app.get('/get-items', (req, res) => {
+    db.query(`
+        SELECT i.*, g.name as game_name, c.name as category_name 
+        FROM items i
+        LEFT JOIN games g ON i.game_id = g.id
+        LEFT JOIN categories c ON i.category_id = c.id
+        ORDER BY i.sort_order ASC, i.created_at DESC
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе товаров для магазина:', err);
+            return res.status(500).json({ error: 'Ошибка при получении товаров' });
+        }
+        res.json(results);
     });
 });
 
@@ -855,6 +884,609 @@ app.post('/change-admin-password', (req, res) => {
             }
             res.json({ message: 'Пароль успешно изменен!' });
         });
+    });
+});
+
+// ========== МАРШРУТЫ ДЛЯ УПРАВЛЕНИЯ СКИДКАМИ ==========
+
+// Получение всех скидок
+app.get('/get-discounts', (req, res) => {
+    db.query(`
+        SELECT d.*, 
+               g.name as game_name,
+               c.name as category_name,
+               i.name as product_name
+        FROM discounts d
+        LEFT JOIN games g ON d.target_type = 'game' AND d.target_id = g.id
+        LEFT JOIN categories c ON d.target_type = 'category' AND d.target_id = c.id
+        LEFT JOIN items i ON d.target_type = 'product' AND d.target_id = i.id
+        ORDER BY d.created_at DESC
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе скидок:', err);
+            return res.status(500).json({ error: 'Ошибка при получении скидок' });
+        }
+        res.json(results);
+    });
+});
+
+// Получение всех игр
+app.get('/get-games', (req, res) => {
+    db.query('SELECT * FROM games ORDER BY name', (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе игр:', err);
+            return res.status(500).json({ error: 'Ошибка при получении игр' });
+        }
+        res.json(results);
+    });
+});
+
+// Добавление новой скидки
+app.post('/add-discount', (req, res) => {
+    const { name, description, type, value, start_date, end_date, target_type, target_id, status } = req.body;
+
+    if (!name || !type || !value || !start_date || !end_date) {
+        return res.status(400).json({ error: 'Название, тип, размер скидки и даты обязательны' });
+    }
+
+    // Проверяем корректность дат
+    if (new Date(start_date) >= new Date(end_date)) {
+        return res.status(400).json({ error: 'Дата окончания должна быть позже даты начала' });
+    }
+
+    const query = `INSERT INTO discounts (name, description, type, value, start_date, end_date, target_type, target_id, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    db.query(query, [name, description, type, value, start_date, end_date, target_type, target_id || null, status], (err, result) => {
+        if (err) {
+            console.error('Ошибка при добавлении скидки:', err);
+            return res.status(500).json({ error: 'Ошибка при добавлении скидки' });
+        }
+        res.json({ message: 'Скидка добавлена!', id: result.insertId });
+    });
+});
+
+// Редактирование скидки
+app.put('/edit-discount/:id', (req, res) => {
+    const discountId = req.params.id;
+    const { name, description, type, value, start_date, end_date, target_type, target_id, status } = req.body;
+
+    console.log('Получен PUT-запрос для обновления скидки с ID:', discountId);
+
+    // Проверяем корректность дат
+    if (new Date(start_date) >= new Date(end_date)) {
+        return res.status(400).json({ error: 'Дата окончания должна быть позже даты начала' });
+    }
+
+    db.query(
+        'UPDATE discounts SET name = ?, description = ?, type = ?, value = ?, start_date = ?, end_date = ?, target_type = ?, target_id = ?, status = ? WHERE id = ?',
+        [name, description, type, value, start_date, end_date, target_type, target_id || null, status, discountId],
+        (err, result) => {
+            if (err) {
+                console.error('Ошибка при обновлении скидки:', err);
+                return res.status(500).json({ error: 'Ошибка при обновлении скидки' });
+            }
+            console.log('Скидка обновлена с ID:', discountId);
+            res.json({ message: 'Скидка обновлена!' });
+        }
+    );
+});
+
+// Удаление скидки
+app.delete('/delete-discount/:id', (req, res) => {
+    const discountId = req.params.id;
+
+    console.log('Получен DELETE-запрос для удаления скидки с ID:', discountId);
+
+    db.query('DELETE FROM discounts WHERE id = ?', [discountId], (err, result) => {
+        if (err) {
+            console.error('Ошибка при удалении скидки:', err);
+            return res.status(500).json({ error: 'Ошибка при удалении скидки' });
+        }
+        console.log('Скидка с ID удалена:', discountId);
+        res.json({ message: 'Скидка удалена' });
+    });
+});
+
+// ========== API ENDPOINTS ДЛЯ ПРОМОКОДОВ ==========
+
+// Получение всех промокодов
+app.get('/get-promocodes', (req, res) => {
+    db.query(`
+        SELECT p.*, 
+               g.name as game_name,
+               c.name as category_name,
+               i.name as product_name
+        FROM promocodes p
+        LEFT JOIN games g ON p.target_type = 'game' AND p.target_id = g.id
+        LEFT JOIN categories c ON p.target_type = 'category' AND p.target_id = c.id
+        LEFT JOIN items i ON p.target_type = 'product' AND p.target_id = i.id
+        ORDER BY p.created_at DESC
+    `, (err, results) => {
+        if (err) {
+            console.error('Ошибка при запросе промокодов:', err);
+            return res.status(500).json({ error: 'Ошибка при получении промокодов' });
+        }
+        res.json(results);
+    });
+});
+
+// Добавление нового промокода
+app.post('/add-promocode', (req, res) => {
+    const { code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status } = req.body;
+
+    console.log('Получен POST-запрос для добавления промокода:', req.body);
+
+    // Валидация дат
+    if (new Date(start_date) >= new Date(end_date)) {
+        return res.status(400).json({ error: 'Дата начала должна быть раньше даты окончания' });
+    }
+
+    const query = `
+        INSERT INTO promocodes (code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(query, [code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status], (err, result) => {
+        if (err) {
+            console.error('Ошибка при добавлении промокода:', err);
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ error: 'Промокод с таким кодом уже существует' });
+            }
+            return res.status(500).json({ error: 'Ошибка при добавлении промокода' });
+        }
+        console.log('Промокод добавлен с ID:', result.insertId);
+        res.json({ success: true, message: 'Промокод создан', id: result.insertId });
+    });
+});
+
+// Редактирование промокода
+app.put('/edit-promocode/:id', (req, res) => {
+    const promocodeId = req.params.id;
+    const { code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status } = req.body;
+
+    console.log('Получен PUT-запрос для редактирования промокода с ID:', promocodeId, req.body);
+
+    // Валидация дат
+    if (new Date(start_date) >= new Date(end_date)) {
+        return res.status(400).json({ error: 'Дата начала должна быть раньше даты окончания' });
+    }
+
+    const query = `
+        UPDATE promocodes 
+        SET code = ?, description = ?, type = ?, value = ?, start_date = ?, end_date = ?, 
+            target_type = ?, target_id = ?, usage_limit = ?, status = ?
+        WHERE id = ?
+    `;
+
+    db.query(query, [code, description, type, value, start_date, end_date, target_type, target_id, usage_limit, status, promocodeId], (err, result) => {
+        if (err) {
+            console.error('Ошибка при обновлении промокода:', err);
+            if (err.code === 'ER_DUP_ENTRY') {
+                return res.status(400).json({ error: 'Промокод с таким кодом уже существует' });
+            }
+            return res.status(500).json({ error: 'Ошибка при обновлении промокода' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Промокод не найден' });
+        }
+        console.log('Промокод с ID обновлен:', promocodeId);
+        res.json({ success: true, message: 'Промокод обновлен' });
+    });
+});
+
+// Удаление промокода
+app.delete('/delete-promocode/:id', (req, res) => {
+    const promocodeId = req.params.id;
+
+    console.log('Получен DELETE-запрос для удаления промокода с ID:', promocodeId);
+
+    db.query('DELETE FROM promocodes WHERE id = ?', [promocodeId], (err, result) => {
+        if (err) {
+            console.error('Ошибка при удалении промокода:', err);
+            return res.status(500).json({ error: 'Ошибка при удалении промокода' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Промокод не найден' });
+        }
+        console.log('Промокод с ID удален:', promocodeId);
+        res.json({ success: true, message: 'Промокод удален' });
+    });
+});
+
+// Обновление порядка товаров
+app.post('/update-product-order', (req, res) => {
+    const { products } = req.body;
+    
+    if (!products || !Array.isArray(products)) {
+        return res.status(400).json({ error: 'Неверные данные' });
+    }
+    
+    // Обновляем порядок для каждого товара
+    const updatePromises = products.map(product => {
+        return new Promise((resolve, reject) => {
+            db.query('UPDATE items SET sort_order = ? WHERE id = ?', 
+                [product.sort_order, product.id], (err, result) => {
+                    if (err) {
+                        reject(err);
+                    } else {
+                        resolve(result);
+                    }
+                });
+        });
+    });
+    
+    Promise.all(updatePromises)
+        .then(() => {
+            res.json({ success: true, message: 'Порядок товаров обновлен' });
+        })
+        .catch(error => {
+            console.error('Ошибка при обновлении порядка товаров:', error);
+            res.status(500).json({ error: 'Ошибка при обновлении порядка товаров' });
+        });
+});
+
+// Создание заказа
+app.post('/create-order', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+
+    const { items } = req.body;
+    
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ error: 'Некорректные данные заказа' });
+    }
+
+    // Начинаем транзакцию
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error('Ошибка при начале транзакции:', err);
+            return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+
+        // Вычисляем общую сумму заказа
+        const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+        // Проверяем баланс пользователя
+        db.query('SELECT balance FROM users WHERE id = ?', [req.user.id], (err, results) => {
+            if (err) {
+                return db.rollback(() => {
+                    console.error('Ошибка при получении баланса:', err);
+                    res.status(500).json({ error: 'Ошибка сервера' });
+                });
+            }
+
+            if (results.length === 0) {
+                return db.rollback(() => {
+                    res.status(404).json({ error: 'Пользователь не найден' });
+                });
+            }
+
+            const currentBalance = results[0].balance;
+
+            if (currentBalance < totalAmount) {
+                return db.rollback(() => {
+                    res.status(400).json({ 
+                        error: 'Недостаточно средств на балансе',
+                        required: totalAmount,
+                        available: currentBalance
+                    });
+                });
+            }
+
+            // Создаем заказ
+            db.query(
+                'INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)',
+                [req.user.id, totalAmount, 'completed'],
+                (err, orderResult) => {
+                    if (err) {
+                        return db.rollback(() => {
+                            console.error('Ошибка при создании заказа:', err);
+                            res.status(500).json({ error: 'Ошибка при создании заказа' });
+                        });
+                    }
+
+                    const orderId = orderResult.insertId;
+
+                    // Добавляем товары в заказ
+                    let completedItems = 0;
+                    let hasError = false;
+
+                    items.forEach((item, index) => {
+                        db.query(
+                            'INSERT INTO order_items (order_id, item_id, quantity, price) VALUES (?, ?, ?, ?)',
+                            [orderId, item.item_id, item.quantity, item.price],
+                            (err) => {
+                                if (err) {
+                                    hasError = true;
+                                    console.error('Ошибка при добавлении товара в заказ:', err);
+                                }
+
+                                completedItems++;
+                                
+                                if (completedItems === items.length) {
+                                    if (hasError) {
+                                        return db.rollback(() => {
+                                            res.status(500).json({ error: 'Ошибка при добавлении товаров в заказ' });
+                                        });
+                                    }
+
+                                    // Списываем деньги с баланса
+                                    const newBalance = currentBalance - totalAmount;
+                                    db.query(
+                                        'UPDATE users SET balance = ? WHERE id = ?',
+                                        [newBalance, req.user.id],
+                                        (err) => {
+                                            if (err) {
+                                                return db.rollback(() => {
+                                                    console.error('Ошибка при обновлении баланса:', err);
+                                                    res.status(500).json({ error: 'Ошибка при обновлении баланса' });
+                                                });
+                                            }
+
+                                            // Подтверждаем транзакцию
+                                            db.commit((err) => {
+                                                if (err) {
+                                                    return db.rollback(() => {
+                                                        console.error('Ошибка при подтверждении транзакции:', err);
+                                                        res.status(500).json({ error: 'Ошибка сервера' });
+                                                    });
+                                                }
+
+                                                res.json({
+                                                    success: true,
+                                                    message: 'Заказ успешно создан',
+                                                    orderId: orderId,
+                                                    totalAmount: totalAmount,
+                                                    newBalance: newBalance
+                                                });
+                                            });
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    });
+                }
+            );
+        });
+    });
+});
+
+// Получение истории заказов пользователя
+app.get('/user-orders', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+
+    const query = `
+        SELECT 
+            o.id,
+            o.total_amount,
+            o.status,
+            o.created_at,
+            GROUP_CONCAT(
+                CONCAT(oi.quantity, 'x ', i.name, ' (', oi.price, '₽)')
+                SEPARATOR ', '
+            ) as items
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN items i ON oi.item_id = i.id
+        WHERE o.user_id = ?
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+    `;
+
+    db.query(query, [req.user.id], (err, results) => {
+        if (err) {
+            console.error('Ошибка при получении заказов:', err);
+            return res.status(500).json({ error: 'Ошибка при получении заказов' });
+        }
+
+        res.json(results);
+    });
+});
+
+// Проверка существования пользователя
+app.post('/check-user', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+
+    const { username } = req.body;
+    
+    if (!username) {
+        return res.status(400).json({ error: 'Имя пользователя не указано' });
+    }
+
+    db.query(
+        'SELECT id, username, balance FROM users WHERE username = ? AND id != ?',
+        [username, req.user.id],
+        (err, results) => {
+            if (err) {
+                console.error('Ошибка при поиске пользователя:', err);
+                return res.status(500).json({ error: 'Ошибка сервера' });
+            }
+
+            if (results.length === 0) {
+                return res.json({ success: false, error: 'Пользователь не найден' });
+            }
+
+            res.json({
+                success: true,
+                user: results[0]
+            });
+        }
+    );
+});
+
+// Отправка перевода
+app.post('/send-transfer', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+
+    const { recipient_username, amount, message } = req.body;
+    
+    if (!recipient_username || !amount) {
+        return res.status(400).json({ error: 'Некорректные данные перевода' });
+    }
+
+    if (amount < 10 || amount > 50000) {
+        return res.status(400).json({ error: 'Сумма должна быть от 10 до 50,000 рублей' });
+    }
+
+    const commission = amount * 0.05;
+    const totalAmount = amount + commission;
+
+    // Начинаем транзакцию
+    db.beginTransaction((err) => {
+        if (err) {
+            console.error('Ошибка при начале транзакции:', err);
+            return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+
+        // Находим получателя
+        db.query(
+            'SELECT id FROM users WHERE username = ? AND id != ?',
+            [recipient_username, req.user.id],
+            (err, recipientResults) => {
+                if (err) {
+                    return db.rollback(() => {
+                        console.error('Ошибка при поиске получателя:', err);
+                        res.status(500).json({ error: 'Ошибка сервера' });
+                    });
+                }
+
+                if (recipientResults.length === 0) {
+                    return db.rollback(() => {
+                        res.status(404).json({ error: 'Получатель не найден' });
+                    });
+                }
+
+                const recipientId = recipientResults[0].id;
+
+                // Проверяем баланс отправителя
+                db.query(
+                    'SELECT balance FROM users WHERE id = ?',
+                    [req.user.id],
+                    (err, senderResults) => {
+                        if (err) {
+                            return db.rollback(() => {
+                                console.error('Ошибка при получении баланса отправителя:', err);
+                                res.status(500).json({ error: 'Ошибка сервера' });
+                            });
+                        }
+
+                        if (senderResults.length === 0) {
+                            return db.rollback(() => {
+                                res.status(404).json({ error: 'Отправитель не найден' });
+                            });
+                        }
+
+                        const currentBalance = senderResults[0].balance;
+
+                        if (currentBalance < totalAmount) {
+                            return db.rollback(() => {
+                                res.status(400).json({ 
+                                    error: 'Недостаточно средств на балансе',
+                                    required: totalAmount,
+                                    available: currentBalance
+                                });
+                            });
+                        }
+
+                        // Создаем запись о переводе
+                        db.query(
+                            'INSERT INTO transfers (sender_id, recipient_id, amount, commission, message) VALUES (?, ?, ?, ?, ?)',
+                            [req.user.id, recipientId, amount, commission, message || null],
+                            (err, transferResult) => {
+                                if (err) {
+                                    return db.rollback(() => {
+                                        console.error('Ошибка при создании перевода:', err);
+                                        res.status(500).json({ error: 'Ошибка при создании перевода' });
+                                    });
+                                }
+
+                                // Списываем деньги с отправителя
+                                const newSenderBalance = currentBalance - totalAmount;
+                                db.query(
+                                    'UPDATE users SET balance = ? WHERE id = ?',
+                                    [newSenderBalance, req.user.id],
+                                    (err) => {
+                                        if (err) {
+                                            return db.rollback(() => {
+                                                console.error('Ошибка при списании с отправителя:', err);
+                                                res.status(500).json({ error: 'Ошибка при списании средств' });
+                                            });
+                                        }
+
+                                        // Добавляем деньги получателю
+                                        db.query(
+                                            'UPDATE users SET balance = balance + ? WHERE id = ?',
+                                            [amount, recipientId],
+                                            (err) => {
+                                                if (err) {
+                                                    return db.rollback(() => {
+                                                        console.error('Ошибка при зачислении получателю:', err);
+                                                        res.status(500).json({ error: 'Ошибка при зачислении средств' });
+                                                    });
+                                                }
+
+                                                // Подтверждаем транзакцию
+                                                db.commit((err) => {
+                                                    if (err) {
+                                                        return db.rollback(() => {
+                                                            console.error('Ошибка при подтверждении транзакции:', err);
+                                                            res.status(500).json({ error: 'Ошибка сервера' });
+                                                        });
+                                                    }
+
+                                                    res.json({
+                                                        success: true,
+                                                        message: 'Перевод успешно отправлен',
+                                                        transferId: transferResult.insertId,
+                                                        newBalance: newSenderBalance
+                                                    });
+                                                });
+                                            }
+                                        );
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            }
+        );
+    });
+});
+
+// История переводов
+app.get('/transfer-history', (req, res) => {
+    if (!req.isAuthenticated()) {
+        return res.status(401).json({ error: 'Не авторизован' });
+    }
+
+    const query = `
+        SELECT 
+            t.*,
+            s.username as sender_username,
+            r.username as recipient_username
+        FROM transfers t
+        LEFT JOIN users s ON t.sender_id = s.id
+        LEFT JOIN users r ON t.recipient_id = r.id
+        WHERE t.sender_id = ? OR t.recipient_id = ?
+        ORDER BY t.created_at DESC
+    `;
+
+    db.query(query, [req.user.id, req.user.id], (err, results) => {
+        if (err) {
+            console.error('Ошибка при получении истории переводов:', err);
+            return res.status(500).json({ error: 'Ошибка при получении истории переводов' });
+        }
+
+        res.json(results);
     });
 });
 
