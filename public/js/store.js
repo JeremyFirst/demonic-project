@@ -173,8 +173,9 @@ async function initializeStore() {
 }
 
 // Загрузка товаров
-async function loadProducts() {
+async function loadProducts(gameId = null) {
     try {
+        // Всегда загружаем ВСЕ товары для корректной работы фильтров
         const response = await fetch('/get-items');
         if (!response.ok) {
             throw new Error('Ошибка при загрузке товаров');
@@ -240,22 +241,21 @@ function populateSidebar(gameId = null) {
     });
     categoriesSidebar.appendChild(allCategoriesItem);
     
-    // Фильтруем категории по игре
-    let categoriesToShow = allCategories;
+    // Показываем категории только если выбрана конкретная игра
     if (gameId) {
-        categoriesToShow = allCategories.filter(category => category.game_id == gameId);
-    }
-    
-    // Добавляем категории
-    categoriesToShow.forEach(category => {
-        const categoryItem = document.createElement('div');
-        categoryItem.className = 'category-item';
-        categoryItem.textContent = category.name;
-        categoryItem.addEventListener('click', () => {
-            selectCategory(category.id);
+        const categoriesToShow = allCategories.filter(category => category.game_id == gameId);
+        
+        // Добавляем категории
+        categoriesToShow.forEach(category => {
+            const categoryItem = document.createElement('div');
+            categoryItem.className = 'category-item';
+            categoryItem.textContent = category.name;
+            categoryItem.addEventListener('click', () => {
+                selectCategory(category.id);
+            });
+            categoriesSidebar.appendChild(categoryItem);
         });
-        categoriesSidebar.appendChild(categoryItem);
-    });
+    }
 }
 
 // Выбор категории в боковой панели
@@ -273,12 +273,15 @@ function selectCategory(categoryId) {
 // Настройка обработчиков событий
 function setupEventListeners() {
     // Поиск
-    searchInput.addEventListener('input', debounce(applyFilters, 300));
+    searchInput.addEventListener('input', debounce(() => applyFilters(), 300));
     
     // Фильтры
     gameFilter.addEventListener('change', function() {
+        const selectedGameId = this.value;
+        
         // Обновляем категории в боковой панели
-        populateSidebar(this.value || null);
+        populateSidebar(selectedGameId || null);
+        
         // Сбрасываем активную категорию
         document.querySelectorAll('.category-item').forEach(item => {
             item.classList.remove('active');
@@ -286,10 +289,11 @@ function setupEventListeners() {
         if (document.querySelector('.category-item')) {
             document.querySelector('.category-item').classList.add('active');
         }
-        // Применяем фильтры
+        
+        // Применяем фильтры (товары уже загружены)
         applyFilters();
     });
-    sortFilter.addEventListener('change', applyFilters);
+    sortFilter.addEventListener('change', () => applyFilters());
     
     // Модальные окна
     setupModalEventListeners();
@@ -340,7 +344,8 @@ function setupCartEventListeners() {
 function applyFilters(selectedCategoryId = null) {
     const searchTerm = searchInput.value.toLowerCase();
     const selectedGame = gameFilter.value;
-    const selectedCategory = selectedCategoryId;
+    // Убеждаемся, что selectedCategoryId - это число или null, а не event объект
+    const selectedCategory = (typeof selectedCategoryId === 'number' || selectedCategoryId === null) ? selectedCategoryId : null;
     const sortBy = sortFilter.value;
     
     // Фильтрация
@@ -353,8 +358,18 @@ function applyFilters(selectedCategoryId = null) {
         return matchesSearch && matchesGame && matchesCategory;
     });
     
-    // Сортировка
-    sortProducts(filteredProducts, sortBy);
+    // Применяем сортировку
+    if (sortBy === 'default') {
+        // По умолчанию: для конкретной игры - по sort_order, для всех игр - по view_count
+        if (selectedGame) {
+            // Для конкретной игры сортируем по sort_order
+            filteredProducts.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        }
+        // Для всех игр товары уже отсортированы по view_count с сервера
+    } else {
+        // Применяем дополнительную сортировку
+        sortProducts(filteredProducts, sortBy);
+    }
     
     // Отображение
     displayProducts(filteredProducts);
@@ -396,6 +411,19 @@ function displayProducts(products) {
     });
 }
 
+// Функция для сокращения названия игры
+function shortenGameName(gameName) {
+    if (!gameName) return '';
+    
+    // Сокращаем "SCP: Secret Laboratory" до "SCP: SL"
+    const lowerName = gameName.toLowerCase();
+    if (lowerName.includes('scp') && (lowerName.includes('secret laboratory') || lowerName.includes('secret lab'))) {
+        return gameName.replace(/secret laboratory/gi, 'SL').replace(/secret lab/gi, 'SL');
+    }
+    
+    return gameName;
+}
+
 // Создание карточки товара
 function createProductCard(product) {
     const card = document.createElement('div');
@@ -410,7 +438,7 @@ function createProductCard(product) {
         <div class="product-info">
             <h3 class="product-name">${product.name}</h3>
             <div class="product-meta">
-                ${game ? `<span class="product-game">${game.name}</span>` : ''}
+                ${game ? `<span class="product-game">${shortenGameName(game.name)}</span>` : ''}
                 ${category ? `<span class="product-category">${category.name}</span>` : ''}
             </div>
             <div class="product-price">
@@ -427,10 +455,14 @@ function openProductModal(product) {
     const game = allGames.find(g => g.id === product.game_id);
     const category = allCategories.find(c => c.id === product.category_id);
     
+    // Увеличиваем счетчик просмотров
+    fetch(`/increment-product-view/${product.id}`, { method: 'POST' })
+        .catch(error => console.error('Ошибка при увеличении счетчика просмотров:', error));
+    
     // Заполняем данные
     document.getElementById('modal-product-image').src = product.image_url || '/img/placeholder.png';
     document.getElementById('modal-product-name').textContent = product.name;
-    document.getElementById('modal-product-game').textContent = game ? game.name : '';
+    document.getElementById('modal-product-game').textContent = game ? shortenGameName(game.name) : '';
     document.getElementById('modal-product-category').textContent = category ? category.name : '';
     document.getElementById('modal-product-price').textContent = product.price;
     document.getElementById('modal-product-description').textContent = product.description || 'Описание отсутствует';

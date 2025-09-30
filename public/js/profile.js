@@ -2,6 +2,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Проверка авторизации
     fetch("/profile")
         .then(response => {
+            console.log("Response status:", response.status, "Response ok:", response.ok);
             if (!response.ok) {
                 throw new Error("Не авторизован");
             }
@@ -80,33 +81,58 @@ document.addEventListener("DOMContentLoaded", function () {
             // Если пользователь авторизован, скрываем модальное окно
             const notification = document.getElementById("auth-notification");
             const body = document.querySelector("body");
-            notification.style.display = "none"; // Скрыть модальное окно (Изменено)
-            body.classList.remove("blocked"); // Разблокировать страницу (Изменено)
+            notification.classList.remove("show"); // Скрыть модальное окно
+            body.classList.remove("blocked"); // Разблокировать страницу
 
         })
         .catch(error => {
             console.error("Ошибка авторизации:", error.message);
+            console.log("Показываем модальное окно для неавторизованного пользователя");
 
-            // Скрываем модальное окно, если пользователь авторизован (Изменено)
-            const notification = document.getElementById("auth-notification"); // Изменено
-            const body = document.querySelector("body"); // Изменено
+            // Показываем модальное окно, если пользователь не авторизован
+            const notification = document.getElementById("auth-notification");
+            const body = document.querySelector("body");
 
-            notification.style.display = "flex"; // Изменено
-            body.classList.remove("blocked"); // Разблокировать страницу (Изменено)
-
-            // Обработчик для кнопки "Войти"
-            document.getElementById("login-btn").addEventListener("click", function () {
-                window.location.href = "/auth/steam"; // Перенаправляем на страницу авторизации
-            });
-
-            // Обработчик для кнопки "На главную"
-            document.getElementById("home-btn").addEventListener("click", function () {
-                window.location.href = "/"; // Перенаправляем на главную страницу
-            });
+            if (notification) {
+                notification.classList.add("show"); // Показать модальное окно
+                console.log("Модальное окно показано");
+            } else {
+                console.error("Элемент auth-notification не найден!");
+            }
+            
+            if (body) {
+                body.classList.add("blocked"); // Заблокировать страницу
+            }
         });
     
 
     
+    // Обработчики для кнопок модального окна авторизации
+    const loginBtn = document.getElementById("login-btn");
+    const homeBtn = document.getElementById("home-btn");
+    
+    console.log("Ищем кнопки модального окна:", { loginBtn, homeBtn });
+    
+    if (loginBtn) {
+        loginBtn.addEventListener("click", function () {
+            console.log("Кнопка 'Войти' нажата");
+            window.location.href = "/auth/steam"; // Перенаправляем на страницу авторизации
+        });
+        console.log("Обработчик для кнопки 'Войти' добавлен");
+    } else {
+        console.error("Кнопка 'Войти' не найдена!");
+    }
+    
+    if (homeBtn) {
+        homeBtn.addEventListener("click", function () {
+            console.log("Кнопка 'На главную' нажата");
+            window.location.href = "/"; // Перенаправляем на главную страницу
+        });
+        console.log("Обработчик для кнопки 'На главную' добавлен");
+    } else {
+        console.error("Кнопка 'На главную' не найдена!");
+    }
+
     // Обработчик кнопок в боковом меню
     document.querySelectorAll(".profile-menu-btn").forEach(button => {
         button.addEventListener("click", function () {

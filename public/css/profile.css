@@ -173,12 +173,16 @@
     height: 100%;
     background-color: rgba(0, 0, 0, 0.7); /* Темный фон */
     z-index: 1000; /* Окно будет поверх всего */
-    display: flex;
     justify-content: center;
     align-items: center;
     flex-direction: column;
     color: white;
     text-align: center;
+}
+
+/* Показать модальное окно */
+.modal.show {
+    display: flex;
 }
 
 /* Содержимое модального окна */
@@ -216,8 +220,21 @@ button:hover {
 
 /* Стили для блокировки контента страницы */
 body.blocked {
-    pointer-events: none; /* Запрещаем взаимодействие с остальной страницей */
     background-color: rgba(0, 0, 0, 0.5); /* Придаем затемнение */
+}
+
+/* Блокируем все элементы кроме модального окна */
+body.blocked * {
+    pointer-events: none;
+}
+
+/* Разрешаем взаимодействие с модальным окном */
+body.blocked .modal {
+    pointer-events: auto;
+}
+
+body.blocked .modal * {
+    pointer-events: auto;
 }
 
 /* Стили для истории заказов */
@@ -312,7 +329,7 @@ body.blocked {
 .finance-section {
     display: flex;
     flex-direction: column;
-    gap: 30px;
+    gap: 15px;
 }
 
 .finance-section h2 {
@@ -385,9 +402,12 @@ body.blocked {
 
 .transfer-info,
 .transfer-form {
-    height: 100%;
     display: flex;
     flex-direction: column;
+}
+
+.transfer-form {
+    margin-top: 65px;
 }
 
 .transfer-info {
@@ -398,13 +418,13 @@ body.blocked {
 .transfer-form h4 {
     color: #fff;
     font-size: 18px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
 }
 
 .info-cards {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
     flex: 1;
 }
 
@@ -412,7 +432,7 @@ body.blocked {
     background-color: #2a2a2a;
     border: 1px solid #444;
     border-radius: 8px;
-    padding: 20px;
+    padding: 10px;
     text-align: center;
 }
 
@@ -441,12 +461,12 @@ body.blocked {
     background-color: #2a2a2a;
     border: 1px solid #444;
     border-radius: 8px;
-    padding: 25px;
+    padding: 22px;
     flex: 1;
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .form-group label {
@@ -535,7 +555,7 @@ body.blocked {
 
 .form-actions {
     display: flex;
-    gap: 15px;
+    gap: 60px;
     margin-top: 25px;
 }
 

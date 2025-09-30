@@ -469,18 +469,36 @@ app.get('/get-products', (req, res) => {
 
 // Endpoint для клиентской части магазина
 app.get('/get-items', (req, res) => {
-    db.query(`
+    // Всегда возвращаем все товары, сортированные по популярности
+    // Конкретная сортировка по играм будет происходить на клиенте
+    const query = `
         SELECT i.*, g.name as game_name, c.name as category_name 
         FROM items i
         LEFT JOIN games g ON i.game_id = g.id
         LEFT JOIN categories c ON i.category_id = c.id
-        ORDER BY i.sort_order ASC, i.created_at DESC
-    `, (err, results) => {
+        WHERE i.is_active = TRUE
+        ORDER BY i.view_count DESC, i.created_at DESC
+    `;
+    
+    db.query(query, (err, results) => {
         if (err) {
             console.error('Ошибка при запросе товаров для магазина:', err);
             return res.status(500).json({ error: 'Ошибка при получении товаров' });
         }
         res.json(results);
+    });
+});
+
+// Endpoint для увеличения счетчика просмотров товара
+app.post('/increment-product-view/:id', (req, res) => {
+    const productId = req.params.id;
+    
+    db.query('UPDATE items SET view_count = view_count + 1 WHERE id = ?', [productId], (err, result) => {
+        if (err) {
+            console.error('Ошибка при увеличении счетчика просмотров:', err);
+            return res.status(500).json({ error: 'Ошибка при обновлении счетчика просмотров' });
+        }
+        res.json({ success: true });
     });
 });
 
