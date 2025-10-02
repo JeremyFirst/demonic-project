@@ -80,7 +80,7 @@ function showUserProfile(user) {
         balanceAmount.textContent = user.balance || '0';
     }
     
-    // Загружаем аватар
+    // Загружаем аватар (только из кэша)
     if (profileAvatar) {
         loadUserAvatar(user, profileAvatar);
     }
@@ -105,7 +105,7 @@ function getCookie(name) {
 }
 
 // Загрузка аватара пользователя
-function loadUserAvatar(user, avatarElement) {
+function loadUserAvatar(user, avatarElement, checkForUpdates = false) {
     const steamId = user.steam_id || user.steamid;
     
     if (!steamId) {
@@ -118,19 +118,28 @@ function loadUserAvatar(user, avatarElement) {
     // Проверяем кэш в cookies
     const avatarCookie = getCookie(`avatar-${steamId}`);
     
-    if (avatarCookie) {
-        // Если аватарка есть в куках, сразу отображаем
+    if (avatarCookie && !checkForUpdates) {
+        // Если аватарка есть в куках и не нужно проверять обновления, сразу отображаем
         avatarElement.src = avatarCookie;
         avatarElement.alt = user.username;
+        console.log("Аватарка загружена из кэша");
     } else {
-        // Если нет, запрашиваем аватарку с сервера
+        // Запрашиваем аватарку с сервера (только при авторизации)
+        console.log(`Загружаем аватарку с сервера для Steam ID: ${steamId}${checkForUpdates ? ' (проверка при авторизации)' : ''}`);
+        
         fetch(`/steam-avatar/${steamId}`)
             .then(response => response.json())
             .then(data => {
                 if (data.avatarUrl) {
+                    // Проверяем, изменилась ли аватарка
+                    if (avatarCookie && avatarCookie !== data.avatarUrl) {
+                        console.log("Аватарка обновлена! Обновляем кэш");
+                    }
+                    
                     avatarElement.src = data.avatarUrl;
                     avatarElement.alt = user.username;
                     setCookie(`avatar-${steamId}`, data.avatarUrl, 7); // Сохраняем на 7 дней
+                    console.log("Аватарка обновлена с сервера");
                 } else {
                     avatarElement.src = "/img/default-avatar.png";
                     avatarElement.alt = user.username;

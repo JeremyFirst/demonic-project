@@ -61,41 +61,79 @@
             </div>
         </div>
 
-        <!-- Основной контент -->
-        <div class="store-content-wrapper">
-            <!-- Боковая панель с категориями -->
-            <aside class="sidebar">
-                <h3>Категории</h3>
-                <div id="categories-sidebar" class="categories-list">
-                    <!-- Категории будут загружены динамически -->
-                </div>
-            </aside>
+        <!-- Боковая панель с категориями -->
+        <aside class="sidebar">
+            <h3>Категории</h3>
+            <div id="categories-sidebar" class="categories-list">
+                <!-- Категории будут загружены динамически -->
+            </div>
+        </aside>
 
-            <!-- Товары -->
-            <section class="products-section">
-                <div class="products-header">
-                    <h2 id="products-title">Все товары</h2>
-                    <div class="products-count">
-                        <span id="products-count">0 товаров</span>
-                    </div>
+        <!-- Товары -->
+        <section class="products-section">
+            <div class="products-header">
+                <h2 id="products-title">Все товары</h2>
+                <div class="products-count">
+                    <span id="products-count">0 товаров</span>
                 </div>
-                
-                <div id="products-grid" class="products-grid">
-                    <!-- Товары будут загружены динамически -->
+            </div>
+            
+            <div id="products-grid" class="products-grid">
+                <!-- Товары будут загружены динамически -->
+            </div>
+            
+            <!-- Индикатор загрузки -->
+            <div id="loading-indicator" class="loading-indicator" style="display: none;">
+                <div class="spinner"></div>
+                <p>Загрузка товаров...</p>
+            </div>
+            
+            <!-- Сообщение об отсутствии товаров -->
+            <div id="no-products" class="no-products" style="display: none;">
+                <p>Товары не найдены</p>
+            </div>
+        </section>
+
+        <!-- Мониторинг серверов -->
+        <aside class="server-monitoring">
+            <h3>Мониторинг серверов</h3>
+            <div class="server-list">
+                <div class="server-item">
+                    <div class="server-name">Rust Server #1</div>
+                    <div class="server-status online">Online</div>
+                    <div class="server-players">24/100</div>
                 </div>
-                
-                <!-- Индикатор загрузки -->
-                <div id="loading-indicator" class="loading-indicator" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Загрузка товаров...</p>
+                <div class="server-item">
+                    <div class="server-name">Rust Server #2</div>
+                    <div class="server-status online">Online</div>
+                    <div class="server-players">67/100</div>
                 </div>
-                
-                <!-- Сообщение об отсутствии товаров -->
-                <div id="no-products" class="no-products" style="display: none;">
-                    <p>Товары не найдены</p>
+                <div class="server-item">
+                    <div class="server-name">SCP: SL Server</div>
+                    <div class="server-status offline">Offline</div>
+                    <div class="server-players">0/20</div>
                 </div>
-            </section>
-        </div>
+            </div>
+        </aside>
+
+        <!-- Статистика -->
+        <aside class="server-stats">
+            <h3>Статистика</h3>
+            <div class="stats-list">
+                <div class="stat-item">
+                    <div class="stat-label">Всего игроков</div>
+                    <div class="stat-value">91</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Активных серверов</div>
+                    <div class="stat-value">2</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Загрузка CPU</div>
+                    <div class="stat-value">45%</div>
+                </div>
+            </div>
+        </aside>
     </main>
 
     <!-- Модальное окно товара -->

@@ -45,8 +45,15 @@
       <div class="profile-row">
           <!-- Боковое меню -->
           <div class="profile-sidebar">
-              <button class="profile-menu-btn" data-section="history">История</button>
-              <button class="profile-menu-btn" data-section="finance">Финансы</button>
+              <div class="history-menu-container">
+                  <button class="profile-menu-btn history-main-btn" data-section="history">История</button>
+                  <div class="history-submenu" id="history-submenu">
+                      <button class="profile-submenu-btn" data-section="history-finance">Финансы</button>
+                      <button class="profile-submenu-btn" data-section="history-purchases">Покупки</button>
+                      <button class="profile-submenu-btn" data-section="history-activations">Активации</button>
+                  </div>
+              </div>
+              <button class="profile-menu-btn" data-section="transfers">Переводы</button>
               <button class="profile-menu-btn" data-section="promocodes">Промокоды</button>
               <button class="profile-menu-btn" data-section="messages">Сообщения</button>
               <button class="profile-menu-btn" data-section="freeze">Заморозка</button>

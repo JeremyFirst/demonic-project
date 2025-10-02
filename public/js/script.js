@@ -28,6 +28,48 @@ function deleteCookie(name) {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
 }
 
+// Универсальная функция загрузки аватара пользователя
+function loadUserAvatar(steamId, avatarElement, checkForUpdates = false) {
+    if (!steamId || !avatarElement) {
+        console.error("Неверные параметры для загрузки аватара");
+        return;
+    }
+
+    // Проверяем кэш в cookies
+    const avatarCookie = getCookie(`avatar-${steamId}`);
+    
+    if (avatarCookie && !checkForUpdates) {
+        // Если аватарка есть в куках и не нужно проверять обновления, сразу отображаем
+        avatarElement.src = avatarCookie;
+        console.log("Аватарка загружена из кэша");
+    } else {
+        // Запрашиваем аватарку с сервера (только при авторизации)
+        console.log(`Загружаем аватарку с сервера для Steam ID: ${steamId}${checkForUpdates ? ' (проверка при авторизации)' : ''}`);
+        
+        fetch(`/steam-avatar/${steamId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.avatarUrl) {
+                    // Проверяем, изменилась ли аватарка
+                    if (avatarCookie && avatarCookie !== data.avatarUrl) {
+                        console.log("Аватарка обновлена! Обновляем кэш");
+                    }
+                    
+                    avatarElement.src = data.avatarUrl;
+                    setCookie(`avatar-${steamId}`, data.avatarUrl, 7); // Сохраняем на 7 дней
+                    console.log("Аватарка обновлена с сервера");
+                } else {
+                    console.warn("Аватар не найден, ставим заглушку");
+                    avatarElement.src = "/img/default-avatar.png";
+                }
+            })
+            .catch(error => {
+                console.error("Ошибка загрузки аватара:", error);
+                avatarElement.src = "/img/default-avatar.png";
+            });
+    }
+}
+
 // Функция для показа текущего блока
 function showCard(index) {
     if (index >= projectBlocks.length) {
@@ -111,28 +153,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 balanceAmount.textContent = user.balance || '0';
             }
 
-            // Загружаем аватар через промежуточный сервер, сначала проверим куки
-            const avatarCookie = getCookie(`avatar-${steamId}`);
+            // Загружаем аватар через промежуточный сервер
             const avatarElement = document.querySelector(".profile-avatar");
-
-            if (avatarCookie) {
-                // Если аватарка есть в куках, сразу отображаем
-                avatarElement.src = avatarCookie;
-            } else {
-                // Если нет, запрашиваем аватарку с сервера
-                fetch(`/steam-avatar/${steamId}`)
-                    .then(response => response.json()) // Получаем URL аватара от сервера
-                    .then(data => {
-                        if (data.avatarUrl) {
-                            avatarElement.src = data.avatarUrl; // Устанавливаем аватар
-                            setCookie(`avatar-${steamId}`, data.avatarUrl, 7); // Сохраняем аватарку в куки на 7 дней
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Ошибка загрузки аватара:", error); // Логируем ошибку
-                        avatarElement.src = "/img/default-avatar.png"; // Заглушка
-                    });
-            }
+            // Проверяем обновления только если нет кэша (первая авторизация)
+            const hasAvatarCache = getCookie(`avatar-${steamId}`);
+            loadUserAvatar(steamId, avatarElement, !hasAvatarCache);
         })
         .catch(error => {
             console.log("Ошибка авторизации:", error.message);

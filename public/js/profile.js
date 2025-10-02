@@ -30,28 +30,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            // Проверка наличия аватарки в куках
-            const avatarCookie = getCookie(`avatar-${user.steam_id}`);
-            if (avatarCookie) {
-                avatarElement.src = avatarCookie;
-                console.log("Аватарка загружена из куков");
-            } else {
-                fetch(`/steam-avatar/${user.steam_id}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.avatarUrl) {
-                            avatarElement.src = data.avatarUrl;
-                            setCookie(`avatar-${user.steam_id}`, data.avatarUrl, 7);
-                        } else {
-                            console.warn("Аватар не найден, ставим заглушку.");
-                            avatarElement.src = "/img/default-avatar.png";
-                        }
-                    })
-                    .catch(error => {
-                        console.error("Ошибка загрузки аватара:", error);
-                        avatarElement.src = "/img/default-avatar.png";
-                    });
-            }
+            // Загружаем аватар пользователя (только из кэша)
+            loadUserAvatar(user.steam_id, avatarElement);
 
             // Добавляем проверку роли пользователя для отображения кнопки "Админка"
             const adminButton = document.getElementById("admin-button");
@@ -133,12 +113,65 @@ document.addEventListener("DOMContentLoaded", function () {
         console.error("Кнопка 'На главную' не найдена!");
     }
 
-    // Обработчик кнопок в боковом меню
-    document.querySelectorAll(".profile-menu-btn").forEach(button => {
-        button.addEventListener("click", function () {
-            const section = this.dataset.section;
-            loadSection(section);
+    // Обработчики для кнопок меню
+    const menuButtons = document.querySelectorAll('.profile-menu-btn');
+    const submenuButtons = document.querySelectorAll('.profile-submenu-btn');
+    const historyMainBtn = document.querySelector('.history-main-btn');
+    const historySubmenu = document.getElementById('history-submenu');
+    
+    // Обработчик для главной кнопки "История"
+    if (historyMainBtn) {
+        historyMainBtn.addEventListener('click', function() {
+            // Переключаем подменю
+            historySubmenu.classList.toggle('show');
+            
+            // Убираем активный класс со всех кнопок
+            menuButtons.forEach(btn => btn.classList.remove('active'));
+            submenuButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Добавляем активный класс к главной кнопке истории
+            this.classList.add('active');
+            
+            // Загружаем общую историю
+            loadSection('history');
         });
+    }
+    
+    // Обработчики для кнопок подменю истории
+    submenuButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const section = this.getAttribute('data-section');
+            loadSection(section);
+            
+            // Убираем активный класс со всех кнопок
+            menuButtons.forEach(btn => btn.classList.remove('active'));
+            submenuButtons.forEach(btn => btn.classList.remove('active'));
+            
+            // Добавляем активный класс к нажатой кнопке подменю
+            this.classList.add('active');
+            
+            // НЕ скрываем подменю - оно остается открытым
+        });
+    });
+    
+    // Обработчики для остальных кнопок меню
+    menuButtons.forEach(button => {
+        if (button !== historyMainBtn) {
+            button.addEventListener('click', function() {
+                const section = this.getAttribute('data-section');
+                loadSection(section);
+                
+                // Убираем активный класс со всех кнопок
+                menuButtons.forEach(btn => btn.classList.remove('active'));
+                submenuButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Добавляем активный класс к нажатой кнопке
+                this.classList.add('active');
+                
+                // Скрываем подменю истории
+                historySubmenu.classList.remove('show');
+            });
+        }
     });
 
     function loadSection(section) {
@@ -146,7 +179,16 @@ document.addEventListener("DOMContentLoaded", function () {
             case "history":
                 loadOrderHistory();
                 return;
-            case "finance":
+            case "history-finance":
+                loadFinanceHistory();
+                return;
+            case "history-purchases":
+                loadPurchaseHistory();
+                return;
+            case "history-activations":
+                loadActivationHistory();
+                return;
+            case "transfers":
                 loadFinanceSection();
                 return;
             case "promocodes":
@@ -219,8 +261,179 @@ document.addEventListener("DOMContentLoaded", function () {
         return null;
     }
 
-    // Функция загрузки истории заказов
+    // Универсальная функция загрузки аватара пользователя
+    function loadUserAvatar(steamId, avatarElement, checkForUpdates = false) {
+        if (!steamId || !avatarElement) {
+            console.error("Неверные параметры для загрузки аватара");
+            return;
+        }
+
+        // Проверяем кэш в cookies
+        const avatarCookie = getCookie(`avatar-${steamId}`);
+        
+        if (avatarCookie && !checkForUpdates) {
+            // Если аватарка есть в куках и не нужно проверять обновления, сразу отображаем
+            avatarElement.src = avatarCookie;
+            console.log("Аватарка загружена из кэша");
+        } else {
+            // Запрашиваем аватарку с сервера (только при авторизации)
+            console.log(`Загружаем аватарку с сервера для Steam ID: ${steamId}${checkForUpdates ? ' (проверка при авторизации)' : ''}`);
+            
+            fetch(`/steam-avatar/${steamId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.avatarUrl) {
+                        // Проверяем, изменилась ли аватарка
+                        if (avatarCookie && avatarCookie !== data.avatarUrl) {
+                            console.log("Аватарка обновлена! Обновляем кэш");
+                        }
+                        
+                        avatarElement.src = data.avatarUrl;
+                        setCookie(`avatar-${steamId}`, data.avatarUrl, 7); // Сохраняем на 7 дней
+                        console.log("Аватарка обновлена с сервера");
+                    } else {
+                        console.warn("Аватар не найден, ставим заглушку");
+                        avatarElement.src = "/img/default-avatar.png";
+                    }
+                })
+                .catch(error => {
+                    console.error("Ошибка загрузки аватара:", error);
+                    avatarElement.src = "/img/default-avatar.png";
+                });
+        }
+    }
+
+    // Новые функции для истории
+    function loadPurchaseHistory() {
+        document.getElementById("dynamic-content").innerHTML = `
+            <h2>История покупок</h2>
+            <div class="history-container">
+                <div class="history-item">
+                    <div class="history-date">2024-01-15 14:30</div>
+                    <div class="history-description">Покупка: Хуйня 5.0</div>
+                    <div class="history-amount">-20.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-14 09:15</div>
+                    <div class="history-description">Покупка: Хуйня 4.0</div>
+                    <div class="history-amount">-10.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-13 16:45</div>
+                    <div class="history-description">Покупка: Хуйня 3.0</div>
+                    <div class="history-amount">-1000.00 ₽</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function loadActivationHistory() {
+        document.getElementById("dynamic-content").innerHTML = `
+            <h2>История активаций</h2>
+            <div class="history-container">
+                <div class="history-item">
+                    <div class="history-date">2024-01-15 12:00</div>
+                    <div class="history-description">Активация промокода: WELCOME10</div>
+                    <div class="history-amount">+10% скидка</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-14 18:30</div>
+                    <div class="history-description">Активация бонуса: Новый игрок</div>
+                    <div class="history-amount">+500.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-13 20:15</div>
+                    <div class="history-description">Активация скидки: VIP статус</div>
+                    <div class="history-amount">+15% скидка</div>
+                </div>
+            </div>
+        `;
+    }
+
+    function loadFinanceHistory() {
+        document.getElementById("dynamic-content").innerHTML = `
+            <h2>История переводов</h2>
+            <div class="history-container">
+                <div class="transfer-item sent">
+                    <div class="transfer-header">
+                        <span class="transfer-type">Отправлен</span>
+                        <span class="transfer-date">28 сентября 2025 г. в 16:37</span>
+                    </div>
+                    <div class="transfer-details">
+                        <div class="transfer-user">
+                            Получатель: <strong>I Sincerely loving</strong>
+                        </div>
+                        <div class="transfer-amount sent">
+                            -5000 ₽
+                            <span class="commission">(комиссия: 250.00 ₽)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="transfer-item received">
+                    <div class="transfer-header">
+                        <span class="transfer-type">Получен</span>
+                        <span class="transfer-date">27 сентября 2025 г. в 14:20</span>
+                    </div>
+                    <div class="transfer-details">
+                        <div class="transfer-user">
+                            Отправитель: <strong>TestUser</strong>
+                        </div>
+                        <div class="transfer-amount received">
+                            +1000 ₽
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Функция загрузки общей истории
     function loadOrderHistory() {
+        document.getElementById("dynamic-content").innerHTML = `
+            <h2>История</h2>
+            <div class="history-container">
+                <p>Вся история операций (от новых к старым):</p>
+                <div class="history-item">
+                    <div class="history-date">2024-01-15 14:30</div>
+                    <div class="history-description">Покупка: Хуйня 5.0</div>
+                    <div class="history-amount negative">-20.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-15 12:00</div>
+                    <div class="history-description">Активация промокода: WELCOME10</div>
+                    <div class="history-amount">+10% скидка</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-14 18:30</div>
+                    <div class="history-description">Активация бонуса: Новый игрок</div>
+                    <div class="history-amount">+500.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-14 09:15</div>
+                    <div class="history-description">Покупка: Хуйня 4.0</div>
+                    <div class="history-amount negative">-10.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-13 20:15</div>
+                    <div class="history-description">Активация скидки: VIP статус</div>
+                    <div class="history-amount">+15% скидка</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-13 16:45</div>
+                    <div class="history-description">Покупка: Хуйня 3.0</div>
+                    <div class="history-amount negative">-1000.00 ₽</div>
+                </div>
+                <div class="history-item">
+                    <div class="history-date">2024-01-12 10:30</div>
+                    <div class="history-description">Пополнение баланса</div>
+                    <div class="history-amount">+2000.00 ₽</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Функция загрузки истории заказов (старая версия)
+    function loadOrderHistoryOld() {
         fetch('/user-orders')
             .then(response => response.json())
             .then(orders => {
@@ -332,12 +545,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     </div>
                 </div>
                 
-                <div class="transfer-history">
-                    <h3>История переводов</h3>
-                    <div id="transfers-list" class="transfers-list">
-                        <p class="loading">Загрузка истории переводов...</p>
-                    </div>
-                </div>
             </div>
         `;
         
